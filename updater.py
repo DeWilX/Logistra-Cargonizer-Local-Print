@@ -11,6 +11,7 @@ import urllib.parse
 import urllib.request
 import urllib.error
 from version import VERSION
+from network_tls import verified_context
 
 MAX_EXE_SIZE = 200 * 1024 * 1024
 
@@ -65,6 +66,10 @@ class GitHubRedirect(urllib.request.HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
+def github_opener():
+    return urllib.request.build_opener(GitHubRedirect(), urllib.request.HTTPSHandler(context=verified_context()))
+
+
 def check_release(repository, current=VERSION):
     repository = repository_name(repository)
     request = urllib.request.Request(f'https://api.github.com/repos/{repository}/releases/latest',
@@ -72,7 +77,7 @@ def check_release(repository, current=VERSION):
                                              'User-Agent': 'Logistra-Print/' + current,
                                              'X-GitHub-Api-Version': '2026-03-10'})
     try:
-        with urllib.request.build_opener(GitHubRedirect()).open(request, timeout=30) as response:
+        with github_opener().open(request, timeout=30) as response:
             body = response.read(1024 * 1024 + 1)
     except urllib.error.HTTPError as error:
         if error.code == 404:
@@ -93,7 +98,7 @@ def download_release(release, directory, opener=None):
     target = directory / ('Logistra-Print-' + validated['version'] + '.exe')
     temporary = target.with_suffix('.part')
     request = urllib.request.Request(validated['url'], headers={'User-Agent': 'Logistra-Print/' + VERSION})
-    opener = opener or urllib.request.build_opener(GitHubRedirect())
+    opener = opener or github_opener()
     digest = hashlib.sha256()
     size = 0
     try:

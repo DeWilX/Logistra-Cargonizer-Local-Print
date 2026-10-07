@@ -60,8 +60,8 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           export LOGISTRA_DATA_DIR="$RUNNER_TEMP/Logistra-self-test"
-          dist/Logistra.app/Contents/MacOS/Logistra --self-test --self-test-report "$RUNNER_TEMP/Logistra-self-test.json"
-          python -c 'import json, os; from pathlib import Path; p = Path(os.environ["RUNNER_TEMP"]); r = json.loads((p / "Logistra-self-test.json").read_text()); c = json.loads((p / "Logistra-self-test/config.json").read_text()); assert r["frozen"] and r["assets_loaded"] and r["default_test_pdf_bundled"]; assert c["sender_id"] == c["printer"] == ""'
+          SSL_CERT_FILE=/nonexistent/certificates.pem SSL_CERT_DIR=/nonexistent dist/Logistra.app/Contents/MacOS/Logistra --self-test --self-test-network --self-test-report "$RUNNER_TEMP/Logistra-self-test.json"
+          python -c 'import json, os; from pathlib import Path; p = Path(os.environ["RUNNER_TEMP"]); r = json.loads((p / "Logistra-self-test.json").read_text()); c = json.loads((p / "Logistra-self-test/config.json").read_text()); assert r["frozen"] and r["assets_loaded"] and r["default_test_pdf_bundled"] and r["github_tls_checked"]; assert c["sender_id"] == c["printer"] == ""'
       - name: Audit packaged macOS defaults
         if: runner.os == 'macOS'
         run: python audit_macos_package.py dist/Logistra-macOS-*.zip

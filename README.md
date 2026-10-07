@@ -6,6 +6,8 @@ A Windows desktop application for downloading Cargonizer shipping labels and pri
 
 Download `Logistra-Print.exe` from this repository's GitHub Releases and put it in a permanent, writable folder. In Settings, enter your own Cargonizer Sender ID and API key. Choose and save a locally installed printer, then verify the included test label before enabling automatic printing. No account, company or printer is preconfigured.
 
+For macOS, download the Apple Silicon or Intel ZIP, extract it and move `Logistra.app` to Applications. Python is included. The app is not Developer ID signed or notarized. For an unidentified-developer warning, follow the **System Settings → Privacy & Security → Open Anyway** steps in [README-macOS.md](README-macOS.md), also included in the Mac ZIP. Do not disable Gatekeeper globally or override a warning that specifically detects malware. See [Apple's instructions](https://support.apple.com/102445).
+
 The API key is protected with Windows DPAPI. User settings, the key and printing history live under `%LOCALAPPDATA%\Logistra`; PDFs can be saved to a chosen folder. Updating the EXE preserves those files. Keys cannot be moved between Windows accounts or computers.
 
 ## Features
@@ -47,3 +49,7 @@ Updates use [GitHub's latest release API](https://docs.github.com/en/rest/releas
 Run `Open-Logistra.cmd` for the Python GUI. The local `config.json` is created from the generic defaults and is ignored by Git. Do not commit user data. Interactive tray tests are skipped in GitHub Actions; the Windows release job also runs the packaged EXE self-test.
 
 macOS builds are available in GitHub Releases and include Python. Automatic EXE replacement is Windows-only. See [README-macOS.md](README-macOS.md) and [LIETOSANA-Windows.txt](LIETOSANA-Windows.txt).
+
+## Support the project
+
+Developed by **Gustavs Meijers**. If Logistra Print helps you, you can support its development with a [donation on Ko-fi](https://ko-fi.com/gustavsm).

@@ -423,6 +423,15 @@ if __name__ == '__main__':
                   'assets_loaded': icon.width() > 0 and actions.width() > 0}
         from version import VERSION, UPDATE_REPOSITORY
         report.update(version=VERSION, update_repository=UPDATE_REPOSITORY)
+        if '--self-test-network' in sys.argv:
+            from updater import github_opener
+            from network_tls import verified_context
+            import ssl
+            context = verified_context()
+            assert context.check_hostname and context.verify_mode == ssl.CERT_REQUIRED
+            with github_opener().open('https://github.com', timeout=30) as response:
+                report['github_tls_checked'] = response.status == 200
+            assert report['github_tls_checked']
         if sys.platform == 'win32':
             from tray_support import WindowsTray
             if '--self-test-tray' in sys.argv:

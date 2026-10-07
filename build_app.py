@@ -8,6 +8,8 @@ import json
 import os
 import re
 import sys
+import shutil
+import tempfile
 from zipfile import ZipFile, ZIP_DEFLATED
 from version import VERSION, UPDATE_REPOSITORY
 
@@ -44,7 +46,11 @@ command += [str(root / 'logistra_gui.py')]
 subprocess.run(command, cwd=root, check=True)
 if sys.platform == 'darwin':
     target = dist / f'Logistra-macOS-{platform.machine()}.zip'
-    subprocess.run(['/usr/bin/ditto', '-c', '-k', '--sequesterRsrc', '--keepParent', str(dist / 'Logistra.app'), str(target)], check=True)
+    with tempfile.TemporaryDirectory(dir=root / 'build', prefix='mac-release-') as folder:
+        staging = Path(folder)
+        subprocess.run(['/usr/bin/ditto', str(dist / 'Logistra.app'), str(staging / 'Logistra.app')], check=True)
+        shutil.copy2(root / 'README-macOS.md', staging / 'README-macOS.md')
+        subprocess.run(['/usr/bin/ditto', '-c', '-k', '--sequesterRsrc', str(staging), str(target)], check=True)
 else:
     target = dist / 'Logistra-Windows-exe.zip'
     with ZipFile(target, 'w', ZIP_DEFLATED) as archive:

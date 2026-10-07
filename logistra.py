@@ -6,7 +6,6 @@ import os
 import re
 from pathlib import Path
 import sqlite3
-import ssl
 import subprocess
 import sys
 import time
@@ -15,6 +14,7 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from app_paths import application_root
+from network_tls import verified_context
 
 ROOT = application_root()
 BASE = 'https://api.cargonizer.no'
@@ -51,8 +51,7 @@ class Client:
         self.cfg = cfg
         shipment_id(cfg.get('sender_id', ''))
         self.key = api_key()
-        certificate = Path(getattr(sys, '_MEIPASS', ROOT)) / 'cacert.pem'
-        context = ssl.create_default_context(cafile=str(certificate)) if getattr(sys, 'frozen', False) and certificate.is_file() else ssl.create_default_context()
+        context = verified_context()
         self.opener = urllib.request.build_opener(NoRedirect, urllib.request.HTTPSHandler(context=context))
         self.pagination = {}
         self.references = {}
