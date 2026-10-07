@@ -76,10 +76,22 @@ def export_label(cfg, identifier, destination):
     return save_pdf_copy(label_file(cfg, identifier), destination)
 
 
+def test_label_asset(cfg):
+    language = cfg.get('language', 'lv')
+    if language not in ('lv', 'en', 'nb'):
+        language = 'lv'
+    return asset('default-test-label-' + language + '.pdf')
+
+
+def test_label_filename(cfg):
+    return {'en': 'Logistra-test-print.pdf', 'nb': 'Logistra-testutskrift.pdf'}.get(
+        cfg.get('language'), 'Logistra-testa-druka.pdf')
+
+
 def default_test_pdf(cfg):
     directory = pdf_directory(cfg, ROOT)
     directory.mkdir(parents=True, exist_ok=True)
-    return save_pdf_copy(asset('default-test-label.pdf'), directory / 'Logistra-testa-druka.pdf')
+    return save_pdf_copy(test_label_asset(cfg), directory / test_label_filename(cfg))
 
 
 def choose_pdf_destination(parent, filename):
@@ -324,9 +336,9 @@ class PrinterWindow:
             self.message.set('Kļūda: ' + str(error))
             return
         if is_pdf_export_printer(cfg):
-            destination = choose_pdf_destination(self.window, 'Logistra-testa-druka.pdf')
+            destination = choose_pdf_destination(self.window, test_label_filename(cfg))
             if destination:
-                self.background(lambda: save_pdf_copy(asset('default-test-label.pdf'), destination), self.export_completed, 'Saglabā testa PDF…')
+                self.background(lambda: save_pdf_copy(test_label_asset(cfg), destination), self.export_completed, 'Saglabā testa PDF…')
             return
         self.background(lambda: print_pdf(cfg, default_test_pdf(cfg)),
                         lambda _: self.print_completed(cfg),

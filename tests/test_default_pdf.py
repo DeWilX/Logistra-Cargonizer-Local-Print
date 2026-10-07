@@ -37,7 +37,7 @@ class DefaultPdfTests(unittest.TestCase):
         with patch.object(printer, 'ROOT', self.root), patch.object(printer, 'Client') as client:
             file = printer.default_test_pdf(self.cfg)
         self.assertEqual(file.parent, self.destination)
-        self.assertEqual(file.read_bytes(), printer.asset('default-test-label.pdf').read_bytes())
+        self.assertEqual(file.read_bytes(), printer.asset('default-test-label-lv.pdf').read_bytes())
         self.assertEqual(history.read_bytes(), b'history sentinel')
         client.assert_not_called()
 
@@ -50,6 +50,26 @@ class DefaultPdfTests(unittest.TestCase):
         picker.assert_not_called()
         printing.assert_called_once()
         self.assertEqual(printing.call_args.args[1], self.destination / 'Logistra-testa-druka.pdf')
+
+    def test_language_selects_matching_pdf_for_printing_and_virtual_export(self):
+        for language, filename in [('lv', 'Logistra-testa-druka.pdf'), ('en', 'Logistra-test-print.pdf'), ('nb', 'Logistra-testutskrift.pdf')]:
+            with self.subTest(language=language):
+                cfg = {**self.cfg, 'language': language}
+                (self.root / 'config.json').write_text(json.dumps(cfg), encoding='utf-8')
+                with patch.object(printer, 'ROOT', self.root):
+                    exported = printer.default_test_pdf(cfg)
+                    self.assertEqual(exported.name, filename)
+                    expected = printer.asset('default-test-label-' + language + '.pdf').read_bytes()
+                    self.assertEqual(exported.read_bytes(), expected)
+                    window = self.window('Microsoft Print to PDF')
+                    destination = self.root / ('virtual-' + language + '.pdf')
+                    with patch.object(printer, 'choose_pdf_destination', return_value=destination):
+                        window.print_selected()
+                        window.background.call_args.args[0]()
+                    self.assertEqual(destination.read_bytes(), expected)
+
+    def test_unknown_language_falls_back_to_latvian(self):
+        self.assertEqual(printer.test_label_asset({'language': '../../invalid'}), printer.test_label_asset({'language': 'lv'}))
 
     def test_cancelled_virtual_default_test_does_not_print_or_create_file(self):
         window = self.window('Microsoft Print to PDF')

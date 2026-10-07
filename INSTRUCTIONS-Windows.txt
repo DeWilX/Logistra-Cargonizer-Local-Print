@@ -7,7 +7,8 @@ GETTING STARTED
 2. In Settings, enter your own Cargonizer Sender ID and API key.
    Click Save and check. Leaving the key field blank keeps the existing key.
 3. In Printer and PDF, select an installed printer and save it.
-   Test print uses the included 102 x 192 mm test label.
+   Test print uses the included 102 x 192 mm test label in your selected
+   language: Latvian, English or Norwegian Bokmal.
    When printing through Adobe, use Actual size / 100% and one copy.
 4. Shipments load on launch when an API key is saved.
    Select a period preset or dates in the calendar. After entering dates

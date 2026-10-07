@@ -26,7 +26,9 @@ config.local.json
 *.new
 *.part
 *.pdf
-!assets/default-test-label.pdf
+!assets/default-test-label-lv.pdf
+!assets/default-test-label-en.pdf
+!assets/default-test-label-nb.pdf
 *.vbs
 Clipboard*.png
 codex-clipboard-*.png

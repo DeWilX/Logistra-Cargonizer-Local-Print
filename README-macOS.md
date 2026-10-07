@@ -28,7 +28,7 @@ Move `Logistra.app` to Applications and launch it from there before updating. Co
 
 In Settings, enter your own Cargonizer Sender ID and API key, then save and check the connection. No account or printer is preconfigured. The key is stored in the macOS login Keychain, rather than the configuration or activity log. A Windows DPAPI key file cannot be transferred to a Mac.
 
-Select a printer installed in **System Settings → Printers & Scanners**. The application uses CUPS queues and `lp`, requests one copy and sets `print-scaling=none`. **Test print** sends the included 102 × 192 mm test label. Check the driver's paper size before printing. Successful submission to a queue does not confirm that a physical label was printed.
+Select a printer installed in **System Settings → Printers & Scanners**. The application uses CUPS queues and `lp`, requests one copy and sets `print-scaling=none`. **Test print** sends the included 102 × 192 mm test label in the selected interface language: Latvian, English or Norwegian Bokmål. Check the driver's paper size before printing. Successful submission to a queue does not confirm that a physical label was printed.
 
 Shipments load on launch when an API key is available. Choose a period preset or dates in the calendar, then use **Filter** after entering dates manually. Use Command/Ctrl or Shift to select multiple shipments. Hover over the account, printer or shipment status to see the reason for its green or red indicator. A successfully loaded empty shipment list is normal.
 

@@ -427,7 +427,7 @@ if __name__ == '__main__':
         report = {'platform': sys.platform, 'arch': platform.machine(),
                   'frozen': bool(getattr(sys, 'frozen', False)), 'data_dir': str(ROOT),
                   'config_loaded': bool(read_config()), 'tk': probe.tk.call('info', 'patchlevel'),
-                  'default_test_pdf_bundled': asset('default-test-label.pdf').read_bytes().startswith(b'%PDF-'),
+                  'default_test_pdf_bundled': all(asset('default-test-label-' + language + '.pdf').read_bytes().startswith(b'%PDF-') for language in ('lv', 'en', 'nb')),
                   'assets_loaded': icon.width() > 0 and actions.width() > 0}
         from version import VERSION, UPDATE_REPOSITORY
         report.update(version=VERSION, update_repository=UPDATE_REPOSITORY)
