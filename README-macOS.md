@@ -1,47 +1,51 @@
-# Logistra Print macOS
+# Logistra Print for macOS
 
-GitHub Releases piedāvā gatavu lietotni abiem Mac procesoru veidiem:
+GitHub Releases provides ready-to-use applications for both Mac processor types:
 
-- Apple Silicon (M1 un jaunāki): `Logistra-macOS-arm64.zip`.
+- Apple Silicon (M1 and newer): `Logistra-macOS-arm64.zip`.
 - Intel: `Logistra-macOS-x86_64.zip`.
 
-Izpako atbilstošo ZIP un pārvieto `Logistra.app` uz Applications. Python ir iekļauts.
+Extract the matching ZIP and move `Logistra.app` to Applications. Python is included; no separate installation is required.
 
-## Pirmā palaišana un macOS drošības brīdinājums
+## First launch and the macOS security warning
 
-Lietotne pašlaik nav parakstīta ar Apple Developer ID sertifikātu vai notarizēta. Tāpēc macOS var ziņot, ka nevar pārbaudīt izstrādātāju vai pārliecināties, ka lietotne nesatur kaitīgu programmatūru.
+The application is currently not signed with an Apple Developer ID certificate or notarized. macOS may therefore report that it cannot verify the developer or check the application for malicious software.
 
-1. Lejupielādē lietotni no šī projekta [GitHub Releases](https://github.com/DeWilX/Logistra-Cargonizer-Local-Print/releases/latest) un mēģini atvērt `Applications/Logistra.app`.
-2. Ja parādās nepārbaudīta izstrādātāja brīdinājums, aizver to un atver **Apple izvēlne → System Settings → Privacy & Security**.
-3. Sadaļā **Security** pie `Logistra` nospied **Open Anyway**. Ievadi Mac paroli vai apstiprini ar Touch ID, ja nepieciešams.
-4. Atkārtotajā dialogā nospied **Open**. Turpmāk lietotni atver no Applications.
+1. Download the application from this project's [GitHub Releases](https://github.com/DeWilX/Logistra-Cargonizer-Local-Print/releases/latest) and try opening `Applications/Logistra.app`.
+2. If an unidentified-developer warning appears, dismiss it and open **Apple menu → System Settings → Privacy & Security**.
+3. Under **Security**, click **Open Anyway** next to `Logistra`. Enter your Mac password or use Touch ID if requested.
+4. Click **Open** in the confirmation dialog. Open the application from Applications on subsequent launches.
 
-Šī atļauja attiecas uz konkrēto lietotni. Nav jāizslēdz Gatekeeper visam datoram. Ja brīdinājums norāda uz atrastu kaitīgu programmatūru, bojātu vai modificētu lietotni, neizmanto šos soļus tā apiešanai; pārtrauc palaišanu un lejupielādē jaunu kopiju no laidieniem. [Apple instrukcija par drošu lietotņu atvēršanu](https://support.apple.com/102445).
+This permission applies to this application only. You do not need to disable Gatekeeper for your computer. If a warning specifically reports detected malware or a damaged or modified application, do not use these steps to bypass it; stop and download a fresh copy from Releases. See [Apple's instructions for opening applications safely](https://support.apple.com/102445).
 
-## Atjaunināšana
+## Updates
 
-No 0.1.8 versijas sadaļā Iestatījumi → Atjauninājumi vari pārbaudīt, lejupielādēt un uzlikt jauno versiju automātiski. Lietotne izvēlas atbilstošo Apple Silicon vai Intel arhīvu, pārbauda tā izmēru un SHA-256, sagaida pašreizējās darbības, aizstāj `Logistra.app` un palaiž to vēlreiz. Iestatījumi, Keychain atslēga un drukāšanas vēsture saglabājas. Vecā lietotne paliek blakus kā `.update-backup-…` kopija. Ja lietotnes mapē nav rakstīšanas tiesību, macOS prasīs administratora atļauju.
+Starting with version 0.1.8, **Settings → Updates** lets you check for, download and install a newer version automatically. The application selects the matching Apple Silicon or Intel archive, verifies its size and SHA-256 digest, waits for active work to finish, replaces `Logistra.app` and launches it again. Settings, the Keychain API key and print history are preserved. The previous application remains beside it as an `.update-backup-…` copy. macOS requests administrator authorization if the installation folder is not writable.
 
-Vispirms pārvieto `Logistra.app` uz Applications mapi un palaid to no turienes. Atjaunināt nevar kopiju disk image vai macOS App Translocation pagaidu mapē. Lai pārietu no vecākas versijas, aizver to, lejupielādē jaunāko ZIP un vienreiz manuāli aizstāj `Logistra.app`. Ja atjauninājums neizdodas, diagnostika atrodas `~/Library/Application Support/Logistra/updates/update.log`.
+Move `Logistra.app` to Applications and launch it from there before updating. Copies running from a disk image or a temporary macOS App Translocation folder cannot update in place. To upgrade from an older version, close it, download the latest ZIP and replace `Logistra.app` manually once. Update diagnostics are stored in `~/Library/Application Support/Logistra/updates/update.log`.
 
-## Iestatīšana
+## Setup and printing
 
-Iestatījumos ievadi savu Sender ID un API atslēgu, saglabā un pārbaudi pieslēgumu. Nav iepriekš aizpildīta konta vai printera. Atslēga glabājas macOS login Keychain, nevis konfigurācijā vai žurnālā. Windows DPAPI failu uz Mac pārnest nevar.
+In Settings, enter your own Cargonizer Sender ID and API key, then save and check the connection. No account or printer is preconfigured. The key is stored in the macOS login Keychain, rather than the configuration or activity log. A Windows DPAPI key file cannot be transferred to a Mac.
 
-Izvēlies printeri, kas pievienots System Settings → Printers & Scanners. Lietotne izmanto CUPS rindas un `lp`, vienu kopiju un `print-scaling=none`. Poga Testa print nosūta iekļauto 102 × 192 mm testa etiķeti; pirms drukāšanas pārbaudi draivera papīra izmēru. Sekmīga nosūtīšana rindai nenozīmē, ka etiķete fiziski izdrukāta.
+Select a printer installed in **System Settings → Printers & Scanners**. The application uses CUPS queues and `lp`, requests one copy and sets `print-scaling=none`. **Test print** sends the included 102 × 192 mm test label. Check the driver's paper size before printing. Successful submission to a queue does not confirm that a physical label was printed.
 
-Iestatījumi, žurnāls un SQLite uzskaite glabājas `~/Library/Application Support/Logistra`. PDF mapi var izvēlēties iestatījumos. Lietotnes aizstāšana ar jaunāku versiju saglabā šos datus. Vienam Sender ID automātisko druku vienlaikus darbini vienā datorā.
+Shipments load on launch when an API key is available. Choose a period preset or dates in the calendar, then use **Filter** after entering dates manually. Use Command/Ctrl or Shift to select multiple shipments. Hover over the account, printer or shipment status to see the reason for its green or red indicator. A successfully loaded empty shipment list is normal.
 
-Minimizēts logs turpina darbu fonā. Mac datoram jābūt ieslēgtam un nedrīkst gulēt. Automātiska palaišana izmanto `~/Library/LaunchAgents/app.logistra.print.plist`. Windows system tray ir Windows funkcija. Automātiska atjaunināšana pieejama gan Windows, gan Mac iepakotajā lietotnē.
+Settings, logs and the SQLite print history are stored in `~/Library/Application Support/Logistra`. You can choose the PDF download folder in Settings. Replacing the application preserves these files. Run automatic printing for a Sender ID on only one computer at a time.
 
-GitHub būvē un pārbauda Apple Silicon un Intel versijas atsevišķi, tostarp palaiž gatavās lietotnes pašpārbaudi un pārbauda arhīva noklusējuma iestatījumus. Reāla Keychain piekļuve, printera druka un palaišana pēc pieteikšanās vēl jāpārbauda lietotāja Mac datorā.
+Minimizing the window keeps the application running in the background. The Mac must remain powered on and awake. Automatic launch uses `~/Library/LaunchAgents/app.logistra.print.plist`. The system tray feature is available on Windows. Automatic application updates are available in the packaged Windows and Mac versions.
 
-Palaišanai no pirmkoda instalē Python 3.12 ar Tkinter, atkarības no `requirements-build.txt` un palaid `python3 logistra_gui.py`. Būvēšanai palaid `python3 build_app.py`.
+GitHub builds and tests Apple Silicon and Intel versions separately, including packaged application self-tests, replacement and restart checks, and an audit of bundled defaults. Access to the user's Keychain, physical printing and launch at login still need confirmation on the user's Mac.
 
-## Atbalsts projektam
+## Running and building from source
 
-Izstrādātājs: **Gustavs Meijers**. Ja lietotne noder, vari atbalstīt tās attīstību ar [ziedojumu Ko-fi](https://ko-fi.com/gustavsm).
+Install Python 3.12 with Tkinter and the dependencies in `requirements-build.txt`, then run `python3 logistra_gui.py`. To build the application, run `python3 build_app.py`.
 
-## Licence
+## Support the project
 
-No versijas 0.1.6 atļauta lietošana uzņēmumā, modificēšana un bezmaksas izplatīšana. Programmu vai tās modificētās versijas nedrīkst pārdot vai izplatīt par maksu bez autora rakstiskas atļaujas. Pilns teksts iekļauts failā LICENSE. Iepriekš ar MIT licenci izplatītās kopijas saglabā savas sākotnējās tiesības.
+Developer: **Gustavs Meijers**. If the application is useful to you, you can support its development with a [donation on Ko-fi](https://ko-fi.com/gustavsm).
+
+## License
+
+From version 0.1.6, business use, modification and free redistribution are permitted. The application and modified versions may not be sold or distributed for a fee without the author's written permission. See the included `LICENSE` file for the full terms. Copies previously distributed under the MIT License retain their original permissions.

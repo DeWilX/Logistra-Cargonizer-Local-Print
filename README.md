@@ -50,7 +50,7 @@ Updates use [GitHub's latest release API](https://docs.github.com/en/rest/releas
 
 Run `Open-Logistra.cmd` for the Python GUI. The local `config.json` is created from the generic defaults and is ignored by Git. Do not commit user data. Interactive tray tests are skipped in GitHub Actions; the Windows release job also runs the packaged EXE self-test.
 
-macOS builds are available in GitHub Releases and include Python. Automatic EXE replacement is Windows-only. See [README-macOS.md](README-macOS.md) and [LIETOSANA-Windows.txt](LIETOSANA-Windows.txt).
+Windows and macOS builds include Python and support automatic application replacement from version 0.1.8. See the English instructions in [README-macOS.md](README-macOS.md) and [LIETOSANA-Windows.txt](LIETOSANA-Windows.txt).
 
 ## Support the project
 

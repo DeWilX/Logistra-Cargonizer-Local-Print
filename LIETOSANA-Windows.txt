@@ -1,47 +1,75 @@
 LOGISTRA PRINT — WINDOWS
 
-1. Pārvieto Logistra-Print.exe uz pastāvīgu, rakstāmu mapi un atver to.
-   Python atsevišķi nav jāinstalē.
-2. Iestatījumos ievadi savu Cargonizer Sender ID un API atslēgu.
-   Saglabā un pārbaudi. Tukšs atslēgas lauks saglabā esošo atslēgu.
-3. Printeris un PDF sadaļā izvēlies instalētu printeri un saglabā to.
-   Izdrukāt PDF izmanto iekļauto 102 x 192 mm testa etiķeti.
-   Adobe drukāšanai izmanto Actual size / 100% un vienu kopiju.
-4. Sūtījumi ielādējas atverot programmu, ja API atslēga ir saglabāta.
-   Izvēlies periodu vai datumus kalendārā. Pēc manuālas datuma maiņas
-   nospied Filtrēt. Ctrl/Shift ļauj atlasīt vairākus sūtījumus.
-5. Sākumā var meklēt pēc sūtījuma ID vai pilna ref. / order numura.
-   PDF nosaukumā ir ID un reference; Atvērt PDF mapi atver saglabāto mapi.
-6. Automātiku ieslēdz atsevišķi. Pirmajā reizē esošie sūtījumi tiek
-   atzīmēti kā sākuma saraksts. Neskaidra druka netiek automātiski atkārtota.
+GETTING STARTED
 
-Microsoft Print to PDF saglabā oriģinālā PDF kopiju izvēlētajā mapē.
-Tā nav fiziska printera pārbaude. Komandas pieņemšana nav fiziskas drukas
-apstiprinājums. Pirms pādrukas pārbaudi printera rindu.
+1. Move Logistra-Print.exe to a permanent, writable folder and open it.
+   Python is included; no separate installation is required.
+2. In Settings, enter your own Cargonizer Sender ID and API key.
+   Click Save and check. Leaving the key field blank keeps the existing key.
+3. In Printer and PDF, select an installed printer and save it.
+   Test print uses the included 102 x 192 mm test label.
+   When printing through Adobe, use Actual size / 100% and one copy.
+4. Shipments load on launch when an API key is saved.
+   Select a period preset or dates in the calendar. After entering dates
+   manually, click Filter. Use Ctrl/Shift to select multiple shipments.
+5. On Home, search by shipment ID or the complete reference / order number.
+   PDF filenames include the ID and reference. Open PDF folder opens the
+   configured download folder.
+6. Enable automation separately. On its first run, existing shipments are
+   recorded as a baseline. Uncertain print results are not retried automatically.
 
-Iestatījumos var izvēlēties PDF mapi, sistēmas/gaišo/tumšo tēmu un valodu:
-Latviešu, English vai Norsk bokmål. Valoda mainās uzreiz.
-Minimālais pārbaudes intervāls ir 5 sekundes. API limita kļūda ieslēdz pauzi.
-Apstiprināt manuāli tikai paslēpj pirmās iestatīšanas bloku.
-Zaļie/sarkanie punkti rāda faktiskos pārbaudes rezultātus.
-Neatrasts saglabātais printeris rāda nav iestatīts.
+Microsoft Print to PDF saves a copy of the original PDF in your chosen folder.
+It does not test a physical printer. Acceptance of a print command does not
+confirm physical printing. Check the printer queue before reprinting.
 
-SYSTEM TRAY UN WINDOWS STARTS
-Tray ikona paliek redzama visu lietotnes darbības laiku.
-Aizverot logu, turpināt system tray nosaka X darbību. Lai pilnīgi izietu,
-tray izvēlnē izvēlies Aizvērt. Otru programmas instanci palaist nevar.
-Windows autostart veido Logistra Print saīsni ar ikonu un paslēptu logu.
-Pēc EXE pārvietošanas saglabā autostart iestatījumus vēlreiz.
+SETTINGS AND STATUS
 
-ATJAUNINĀJUMI
-GitHub release versijā repozitorijs ir iekļauts; lokālā būvē ievadi publiska
-repozitorija owner/repo iestatījumos. Pārbaudīt atjauninājumus atrod jaunāko
-GitHub Release. Lejupielādēt un atjaunināt pārbauda EXE SHA-256, sagaida
-pašreizējo darbu pabeigšanu, saglabā vecā EXE kopiju un pārstartē lietotni.
-EXE mapei jābūt rakstāmai. Kļūdu žurnāls ir lietotāja updates/update.log.
-Ja repozitorijs vai pirmais laidiena EXE vēl nav publicēts, atjaunināšana
-vēl nav pieejama. Atjaunināšana šobrīd atbalsta publiskus repozitorijus.
+Settings lets you choose the PDF folder, System/Light/Dark appearance and
+Latvian, English or Norwegian Bokmal. Language changes apply immediately.
+The minimum polling interval is 5 seconds. API rate-limit errors trigger a pause.
+Dismiss setup only hides the initial setup panel; it does not mark checks passed.
+Green/red indicators show actual check results. Hover for an explanation.
+A saved printer that is unavailable is shown as not configured.
+A successful empty shipment list is normal.
 
-Konts, API atslēga un drukas vēsture glabājas %LOCALAPPDATA%\Logistra.
-Atjaunināšana šos failus nemaina. DPAPI atslēga pieder konkrētajam Windows
-lietotājam un datoram. EXE nav parakstīts ar izdevēja sertifikātu.
+SYSTEM TRAY AND WINDOWS STARTUP
+
+The tray icon remains available while the application is running.
+Close to system tray controls what the window's X button does. To exit
+completely, select Exit from the tray menu. A second instance cannot run.
+Windows startup creates a Logistra Print shortcut with an icon and a hidden
+window. After moving the EXE, save the startup setting again.
+
+UPDATES
+
+The update source is included in the build; no repository entry is required.
+Check for updates finds the latest public GitHub Release. Download and update
+verifies the EXE's size and SHA-256 digest, waits for active work to finish,
+keeps a backup of the previous EXE and restarts the application.
+The EXE folder must be writable. Diagnostics are stored at:
+%LOCALAPPDATA%\Logistra\updates\update.log
+
+Version 0.1.8 fixes restarting the packaged EXE after replacement. If an older
+version closes without restarting during an update, download the latest EXE,
+close any remaining Logistra instance and replace the old EXE manually once.
+Future updates use the corrected updater. Settings and print history remain.
+
+USER DATA
+
+The account settings, API key and print history are stored in:
+%LOCALAPPDATA%\Logistra
+
+Updates preserve these files. The API key is protected with Windows DPAPI
+and belongs to the Windows user and computer where it was saved.
+The EXE is currently not signed with a publisher certificate.
+
+DEVELOPER, DONATIONS AND LICENSE
+
+Developer: Gustavs Meijers.
+Support development: https://ko-fi.com/gustavsm
+
+From version 0.1.6, business use, modification and free redistribution are
+permitted. Selling the application or modified versions, paid access and
+paid software bundles require the author's written permission.
+See LICENSE for the full terms. Earlier MIT-licensed copies retain their
+original permissions. Third-party components retain their own licenses.
