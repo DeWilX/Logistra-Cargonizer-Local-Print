@@ -6,6 +6,7 @@ from tkinter import ttk
 LANGUAGES = {'lv': 'Latviešu', 'en': 'English', 'nb': 'Norsk bokmål'}
 CATALOG = '''Sākums|Home|Hjem
 Cargonizer sūtījumi|Cargonizer shipments|Cargonizer sendinger
+Pašlaik nevar pārbaudīt atjauninājumus. Pārbaudi interneta savienojumu un mēģini vēlreiz pēc brīža.|Unable to check for updates right now. Check your internet connection and try again shortly.|Kan ikke se etter oppdateringer akkurat nå. Kontroller internettforbindelsen og prøv igjen om litt.
 Printeris un PDF|Printer and PDF|Skriver og PDF
 Iestatījumi|Settings|Innstillinger
 Darbību žurnāls|Activity log|Aktivitetslogg

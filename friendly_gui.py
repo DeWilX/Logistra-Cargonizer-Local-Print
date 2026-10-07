@@ -327,7 +327,8 @@ class FriendlyApp(App):
             release, error = result
             self.pending_update = release
             if error:
-                self.update_status.set('Atjauninājumu pārbaude neizdevās: ' + error)
+                self.update_status.set('Pašlaik nevar pārbaudīt atjauninājumus. Pārbaudi interneta savienojumu un mēģini vēlreiz pēc brīža.')
+                self.log('Atjauninājumu pārbaude neizdevās: ' + error)
             elif release:
                 self.update_status.set('Pieejama jauna versija: ' + release['version'])
                 self.log('Pieejama jauna versija: ' + release['version'])
