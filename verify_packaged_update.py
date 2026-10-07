@@ -1,5 +1,4 @@
 """Exercise replacement and restart of an actual packaged app in an isolated folder."""
-import base64
 import hashlib
 import json
 import os
@@ -9,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from version import VERSION
 
 
@@ -25,20 +25,18 @@ def verify():
     environment = {**os.environ, 'LOGISTRA_DATA_DIR': str(data)}
     environment.pop('CARGONIZER_API_KEY', None)
     if sys.platform == 'win32':
-        from updater import replacement_script
         staged, target = folder / 'staged.exe', folder / 'Logistra-Print.exe'
         shutil.copy2(workspace / 'dist/Logistra-Print.exe', staged)
         shutil.copy2(staged, target)
-        digest = hashlib.sha256(staged.read_bytes()).hexdigest()
-        script = replacement_script(staged, target, digest, 0)
-        args = "@('--self-test','--self-test-report','" + str(report).replace("'", "''") + "')"
-        script = script.replace("'--after-update'", args) + ' -Wait'
-        environment.update(_PYI_ARCHIVE_FILE=str(target), _PYI_APPLICATION_HOME_DIR=str(folder / 'deleted-old-extraction'),
-                           _PYI_PARENT_PROCESS_LEVEL='1')
-        result = subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-EncodedCommand',
-                                 base64.b64encode(script.encode('utf-16le')).decode('ascii')],
-                                env=environment, capture_output=True, timeout=90)
-        assert result.returncode == 0, result.stderr.decode(errors='replace')
+        # Start the actual frozen/windowed app. It must launch the helper itself,
+        # exit, be replaced, then restart to produce the report. Running just the
+        # PowerShell script from Python misses console creation flag failures.
+        subprocess.run([str(target), '--self-test', '--self-test-update', str(staged),
+                        '--self-test-report', str(report)], env=environment, check=True, timeout=30)
+        deadline = time.monotonic() + 60
+        while not report.is_file() and time.monotonic() < deadline:
+            time.sleep(0.1)
+        assert report.is_file(), 'Restart failed: ' + (folder / 'update.log').read_text(errors='replace')
         assert target.read_bytes() == staged.read_bytes()
         assert target.with_name(target.name + '.bak').read_bytes() == staged.read_bytes()
     elif sys.platform == 'darwin':

@@ -49,7 +49,9 @@ keeps a backup of the previous EXE and restarts the application.
 The EXE folder must be writable. Diagnostics are stored at:
 %LOCALAPPDATA%\Logistra\updates\update.log
 
-Version 0.1.8 fixes restarting the packaged EXE after replacement. If an older
+Version 0.1.10 fixes the Windows update helper silently exiting before it
+performs the update. The application now waits for confirmation that the
+helper has started before closing. If an older
 version closes without restarting during an update, download the latest EXE,
 close any remaining Logistra instance and replace the old EXE manually once.
 Future updates use the corrected updater. Settings and print history remain.

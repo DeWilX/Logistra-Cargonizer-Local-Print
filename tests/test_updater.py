@@ -100,6 +100,20 @@ class UpdaterTests(unittest.TestCase):
         opener.open.assert_not_called()
 
     @unittest.skipUnless(os.name == 'nt', 'Windows replacement helper')
+    def test_failed_helper_start_keeps_application_open(self):
+        with tempfile.TemporaryDirectory() as folder:
+            staged, target = Path(folder) / 'staged.exe', Path(folder) / 'app.exe'
+            staged.write_bytes(self.body)
+            target.write_bytes(self.body)
+            process = Mock()
+            process.poll.return_value = 0
+            with patch.object(updater.sys, 'frozen', True, create=True), patch.object(updater.sys, 'executable', str(target)), patch.object(updater.subprocess, 'Popen', return_value=process):
+                with self.assertRaisesRegex(RuntimeError, 'palīgprocess nesākās'):
+                    updater.launch_replacement(staged, hashlib.sha256(self.body).hexdigest())
+            self.assertEqual(target.read_bytes(), self.body)
+            self.assertFalse(list(Path(folder).glob('update-ready-*')))
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows replacement helper')
     def test_windows_helper_replaces_only_target_and_preserves_backup_and_settings(self):
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1] / 'build') as folder:
             root = Path(folder)

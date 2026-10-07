@@ -9,6 +9,8 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import time
+import uuid
 import urllib.parse
 import urllib.request
 import urllib.error
@@ -196,7 +198,7 @@ def download_release(release, directory, opener=None):
         temporary.unlink(missing_ok=True)
 
 
-def replacement_script(staged, target, expected_hash, parent_pid, hidden=False, resume=False):
+def replacement_script(staged, target, expected_hash, parent_pid, hidden=False, resume=False, ready_path=None, restart_arguments=None):
     staged, target = Path(staged).resolve(), Path(target).resolve()
     if staged == target or target.suffix.lower() != '.exe' or not staged.is_file() or not target.is_file():
         raise ValueError('Atjaunināšanai vajadzīgi atšķirīgi esoši EXE faili.')
@@ -214,6 +216,8 @@ def replacement_script(staged, target, expected_hash, parent_pid, hidden=False, 
     script += 'Import-Module ($PSHOME + "\\Modules\\Microsoft.PowerShell.Utility\\Microsoft.PowerShell.Utility.psd1"); '
     script += f'$source={quote(staged)}; $target={quote(target)}; $replacement={quote(replacement)}; $backup={quote(backup)}; '
     script += '$expected=' + quote(expected_hash) + '; '
+    if ready_path is not None:
+        script += '[System.IO.File]::WriteAllText(' + quote(Path(ready_path).resolve()) + ', "ready"); '
     if parent_pid:
         script += f'if (Get-Process -Id {parent_pid} -ErrorAction SilentlyContinue) {{ Wait-Process -Id {parent_pid} -Timeout 180 }}; '
     script += 'if ((Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash -ne $expected) { throw "Update hash mismatch" }; '
@@ -228,24 +232,45 @@ def replacement_script(staged, target, expected_hash, parent_pid, hidden=False, 
     # A frozen process inherits the old onefile extraction directory. Force a
     # fresh independent bootloader run after the old process removes that folder.
     script += '$env:PYINSTALLER_RESET_ENVIRONMENT="1"; '
-    script += 'Start-Process -FilePath $target -ArgumentList ' + quote(arguments) + ' -WorkingDirectory ' + quote(target.parent) + ' -WindowStyle Hidden'
+    argument_text = subprocess.list2cmdline(restart_arguments) if restart_arguments is not None else arguments
+    script += 'Start-Process -FilePath $target -ArgumentList ' + quote(argument_text) + ' -WorkingDirectory ' + quote(target.parent) + ' -WindowStyle Hidden'
     return script
 
 
-def launch_replacement(staged, expected_hash, hidden=False, resume=False):
+def launch_replacement(staged, expected_hash, hidden=False, resume=False, *, restart_arguments=None):
     if sys.platform == 'darwin' and getattr(sys, 'frozen', False):
         from mac_updater import launch_replacement as launch_mac
         return launch_mac(staged, expected_hash, hidden, resume)
     if os.name != 'nt' or not getattr(sys, 'frozen', False):
         raise ValueError('Automātiska EXE aizstāšana pieejama Windows EXE versijā.')
-    script = replacement_script(staged, sys.executable, expected_hash, os.getpid(), hidden, resume)
+    ready = Path(staged).parent / ('update-ready-' + uuid.uuid4().hex)
+    script = replacement_script(staged, sys.executable, expected_hash, os.getpid(), hidden, resume,
+                                ready_path=ready, restart_arguments=restart_arguments)
     # Persist diagnostics beside the staged download, never in user shipment data.
     log = Path(staged).parent / 'update.log'
     quote = lambda value: "'" + str(value).replace("'", "''") + "'"
-    script = 'try { ' + script + ' } catch { $_ | Out-File -LiteralPath ' + quote(log) + ' -Encoding utf8; '
+    script = 'try { [Console]::Out.WriteLine("Update helper started. Waiting for application exit."); ' + script
+    script += '; [Console]::Out.WriteLine("Replacement complete; restart requested.") } catch { [Console]::Error.WriteLine($_.ToString()); '
     script += 'Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.MessageBox]::Show("Update failed. Open Logistra again. Details: " + ' + quote(log) + ', "Logistra Print"); exit 1 }'
-    return subprocess.Popen(['powershell.exe', '-NoProfile', '-NonInteractive', '-EncodedCommand',
-                             base64.b64encode(script.encode('utf-16le')).decode('ascii')],
-                            creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS,
-                            env={**os.environ, 'PYINSTALLER_RESET_ENVIRONMENT': '1'},
-                            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    # DETACHED_PROCESS makes Windows PowerShell exit without executing its command
+    # when launched from a windowed frozen EXE. CREATE_NO_WINDOW is sufficient;
+    # the helper survives its parent and owns an independent hidden console.
+    with log.open('ab') as diagnostics:
+        process = subprocess.Popen(['powershell.exe', '-NoProfile', '-NonInteractive', '-EncodedCommand',
+                                    base64.b64encode(script.encode('utf-16le')).decode('ascii')],
+                                   creationflags=subprocess.CREATE_NO_WINDOW,
+                                   env={**os.environ, 'PYINSTALLER_RESET_ENVIRONMENT': '1'},
+                                   stdin=subprocess.DEVNULL, stdout=diagnostics, stderr=diagnostics)
+    try:
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
+            if ready.is_file():
+                return process
+            if process.poll() is not None:
+                break
+            time.sleep(0.05)
+        if process.poll() is None:
+            process.terminate()
+        raise RuntimeError('Atjaunināšanas palīgprocess nesākās. Lietotne paliek atvērta. Žurnāls: ' + str(log))
+    finally:
+        ready.unlink(missing_ok=True)

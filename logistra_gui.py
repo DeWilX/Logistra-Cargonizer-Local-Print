@@ -406,6 +406,14 @@ if __name__ == '__main__':
                 instance.close()
             raise SystemExit(0)
     initialize_config()
+    if '--self-test' in sys.argv and '--self-test-update' in sys.argv:
+        import hashlib
+        from updater import launch_replacement
+        staged = Path(sys.argv[sys.argv.index('--self-test-update') + 1])
+        report_path = sys.argv[sys.argv.index('--self-test-report') + 1]
+        launch_replacement(staged, hashlib.sha256(staged.read_bytes()).hexdigest(),
+                           restart_arguments=['--self-test', '--self-test-report', report_path])
+        raise SystemExit(0)
     if '--self-test' in sys.argv:
         import platform
         from friendly_gui import FriendlyApp

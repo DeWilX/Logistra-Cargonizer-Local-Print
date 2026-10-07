@@ -58,7 +58,7 @@ else:
     with ZipFile(target, 'w', ZIP_DEFLATED) as archive:
         archive.write(dist / f'{app_name}.exe', f'{app_name}.exe')
         archive.write(root / 'LICENSE', 'LICENSE')
-        instructions = root / 'LIETOSANA-Windows.txt'
+        instructions = root / 'INSTRUCTIONS-Windows.txt'
         if instructions.is_file():
             archive.write(instructions, instructions.name)
 print(target)
