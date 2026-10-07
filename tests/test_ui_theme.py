@@ -1,4 +1,5 @@
 import unittest
+import time
 from unittest.mock import Mock, patch
 import ui_theme
 import tkinter as tk
@@ -18,6 +19,10 @@ class WindowSizeTests(unittest.TestCase):
                 self.assertTrue(root._logistra_dark)
             with patch.object(ui_theme, 'system_dark_mode', return_value=False):
                 ui_theme.watch_theme(root)
+                deadline = time.monotonic() + 2
+                while root._logistra_dark and time.monotonic() < deadline:
+                    root.update()
+                    time.sleep(0.01)
                 self.assertFalse(root._logistra_dark)
                 ui_theme.set_theme_mode(root, 'dark')
                 ui_theme.watch_theme(root)
