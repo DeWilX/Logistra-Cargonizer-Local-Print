@@ -311,7 +311,7 @@ class FriendlyApp(App):
         self.check_updates(automatic=True)
 
     def check_updates(self, automatic=False, install=False):
-        from updater import check_release
+        from updater import check_release, platform_asset
         repository = self.save_update_preferences()
         if not repository:
             if repository == '' and not automatic:
@@ -320,7 +320,7 @@ class FriendlyApp(App):
         self.update_status.set('Pārbauda atjauninājumus…')
         def action():
             try:
-                return check_release(repository), None
+                return check_release(repository, asset_name=platform_asset()), None
             except Exception as error:
                 return None, str(error)
         def completed(result):
@@ -341,8 +341,8 @@ class FriendlyApp(App):
         if not self.pending_update:
             self.check_updates(install=True)
             return
-        if sys.platform != 'win32' or not getattr(sys, 'frozen', False):
-            self.update_status.set('Automātiska EXE aizstāšana pieejama Windows EXE versijā.')
+        if sys.platform not in ('win32', 'darwin') or not getattr(sys, 'frozen', False):
+            self.update_status.set('Automātiska atjaunināšana pieejama instalētajā lietotnē.')
             return
         from updater import download_release, launch_replacement, repository_name
         try:

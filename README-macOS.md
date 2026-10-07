@@ -20,7 +20,9 @@ Lietotne pašlaik nav parakstīta ar Apple Developer ID sertifikātu vai notariz
 
 ## Atjaunināšana
 
-Aizver veco Logistra kopiju, lejupielādē savam procesoram paredzēto jaunāko ZIP un aizstāj `Logistra.app` mapē Applications. Atver tieši šo kopiju un iestatījumos pārbaudi versijas numuru. Iestatījumi un drukāšanas vēsture saglabājas. Versijā 0.1.5 ir labota atjauninājumu pārbaudes SSL sertifikātu kļūda un pievienota rezerves pārbaude GitHub API limita gadījumā; repozitorija ievades lauks ir noņemts.
+No 0.1.8 versijas sadaļā Iestatījumi → Atjauninājumi vari pārbaudīt, lejupielādēt un uzlikt jauno versiju automātiski. Lietotne izvēlas atbilstošo Apple Silicon vai Intel arhīvu, pārbauda tā izmēru un SHA-256, sagaida pašreizējās darbības, aizstāj `Logistra.app` un palaiž to vēlreiz. Iestatījumi, Keychain atslēga un drukāšanas vēsture saglabājas. Vecā lietotne paliek blakus kā `.update-backup-…` kopija. Ja lietotnes mapē nav rakstīšanas tiesību, macOS prasīs administratora atļauju.
+
+Vispirms pārvieto `Logistra.app` uz Applications mapi un palaid to no turienes. Atjaunināt nevar kopiju disk image vai macOS App Translocation pagaidu mapē. Lai pārietu no vecākas versijas, aizver to, lejupielādē jaunāko ZIP un vienreiz manuāli aizstāj `Logistra.app`. Ja atjauninājums neizdodas, diagnostika atrodas `~/Library/Application Support/Logistra/updates/update.log`.
 
 ## Iestatīšana
 
@@ -30,7 +32,7 @@ Izvēlies printeri, kas pievienots System Settings → Printers & Scanners. Liet
 
 Iestatījumi, žurnāls un SQLite uzskaite glabājas `~/Library/Application Support/Logistra`. PDF mapi var izvēlēties iestatījumos. Lietotnes aizstāšana ar jaunāku versiju saglabā šos datus. Vienam Sender ID automātisko druku vienlaikus darbini vienā datorā.
 
-Minimizēts logs turpina darbu fonā. Mac datoram jābūt ieslēgtam un nedrīkst gulēt. Automātiska palaišana izmanto `~/Library/LaunchAgents/app.logistra.print.plist`. Windows system tray un automātiska EXE aizstāšana ir Windows funkcijas; Mac atjauninājumam lejupielādē atbilstošo ZIP un aizstāj lietotni.
+Minimizēts logs turpina darbu fonā. Mac datoram jābūt ieslēgtam un nedrīkst gulēt. Automātiska palaišana izmanto `~/Library/LaunchAgents/app.logistra.print.plist`. Windows system tray ir Windows funkcija. Automātiska atjaunināšana pieejama gan Windows, gan Mac iepakotajā lietotnē.
 
 GitHub būvē un pārbauda Apple Silicon un Intel versijas atsevišķi, tostarp palaiž gatavās lietotnes pašpārbaudi un pārbauda arhīva noklusējuma iestatījumus. Reāla Keychain piekļuve, printera druka un palaišana pēc pieteikšanās vēl jāpārbauda lietotāja Mac datorā.
 

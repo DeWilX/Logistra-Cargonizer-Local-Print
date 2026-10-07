@@ -207,6 +207,9 @@ Atjauninājumu pārbaude neizdevās: |Update check failed: |Kontroll av oppdater
 Pieejama jauna versija: |New version available: |Ny versjon tilgjengelig:
 Jau lieto jaunāko versiju.|You are using the latest version.|Du bruker den nyeste versjonen.
 Automātiska EXE aizstāšana pieejama Windows EXE versijā.|Automatic EXE replacement is available in the Windows EXE version.|Automatisk utskifting av EXE er tilgjengelig i Windows EXE-versjonen.
+Automātiska atjaunināšana pieejama instalētajā lietotnē.|Automatic updating is available in the installed application.|Automatisk oppdatering er tilgjengelig i den installerte appen.
+Pirms atjaunināšanas pārvieto Logistra.app uz Applications mapi.|Move Logistra.app to Applications before updating.|Flytt Logistra.app til Programmer før oppdatering.
+Blakus lietotnei ir iepriekšējā atjauninājuma kopija. Pārvieto to pirms nākamā atjauninājuma.|A previous update copy is beside the app. Move it before updating again.|En tidligere oppdateringskopi ligger ved siden av appen. Flytt den før du oppdaterer igjen.
 Lejupielādē un pārbauda atjauninājumu…|Downloading and verifying update…|Laster ned og kontrollerer oppdatering…
 Atjauninājums pārbaudīts. Sagaida pašreizējās darbības un pārstartē lietotni.|Update verified. Waiting for current work, then restarting the app.|Oppdatering kontrollert. Venter på pågående arbeid og starter deretter appen på nytt.
 GitHub laidieni vēl nav publicēti vai repozitorijs nav publisks.|No GitHub releases have been published, or the repository is not public.|Ingen GitHub-utgivelser er publisert, eller repositoriet er ikke offentlig.'''

@@ -65,6 +65,8 @@ jobs:
       - name: Audit packaged macOS defaults
         if: runner.os == 'macOS'
         run: python audit_macos_package.py dist/Logistra-macOS-*.zip
+      - name: Verify replacement and restart of packaged application
+        run: python verify_packaged_update.py
       - uses: actions/upload-artifact@v4
         with:
           name: release-${{ matrix.os }}

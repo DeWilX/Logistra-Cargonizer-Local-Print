@@ -4,6 +4,7 @@ import hashlib
 from html.parser import HTMLParser
 import json
 import os
+import platform
 from pathlib import Path
 import re
 import subprocess
@@ -34,19 +35,30 @@ def version_tuple(value):
     return tuple(int(part) for part in match.groups())
 
 
-def validate_release(payload, repository, current=VERSION):
+def platform_asset():
+    if sys.platform == 'darwin':
+        arch = platform.machine().lower()
+        if arch not in ('arm64', 'x86_64'):
+            raise ValueError('Unsupported Mac architecture.')
+        return 'Logistra-macOS-' + arch + '.zip'
+    return 'Logistra-Print.exe'
+
+
+def validate_release(payload, repository, current=VERSION, asset_name='Logistra-Print.exe'):
     repository = repository_name(repository)
     if payload.get('draft') or payload.get('prerelease'):
         return None
     tag = payload['tag_name']
     if version_tuple(tag) <= version_tuple(current):
         return None
-    asset = next((item for item in payload.get('assets', []) if item.get('name') == 'Logistra-Print.exe' and item.get('state') == 'uploaded'), None)
+    if asset_name not in ('Logistra-Print.exe', 'Logistra-macOS-arm64.zip', 'Logistra-macOS-x86_64.zip'):
+        raise ValueError('Unsupported release asset.')
+    asset = next((item for item in payload.get('assets', []) if item.get('name') == asset_name and item.get('state') == 'uploaded'), None)
     if not asset:
         raise ValueError('GitHub laidienā nav gatava Windows EXE.')
     url = asset.get('browser_download_url', '')
     parsed = urllib.parse.urlsplit(url)
-    expected = '/' + repository + '/releases/download/' + tag + '/Logistra-Print.exe'
+    expected = '/' + repository + '/releases/download/' + tag + '/' + asset_name
     if parsed.scheme != 'https' or parsed.netloc != 'github.com' or parsed.path != expected or parsed.query or parsed.fragment:
         raise ValueError('Atjauninājuma saite neatbilst izvēlētajam GitHub repozitorijam.')
     digest = asset.get('digest', '')
@@ -86,7 +98,7 @@ class ReleaseAssetParser(HTMLParser):
         elif self.row is not None:
             if tag == 'a' and attrs.get('href') == self.expected:
                 self.row['url'] = 'https://github.com' + self.expected
-            if tag == 'clipboard-copy' and attrs.get('aria-label') == 'Copy to clipboard digest for Logistra-Print.exe':
+            if tag == 'clipboard-copy' and attrs.get('aria-label') == 'Copy to clipboard digest for ' + self.expected.rsplit('/', 1)[-1]:
                 self.row['digest'] = attrs.get('value', '')
 
     def handle_endtag(self, tag):
@@ -96,7 +108,7 @@ class ReleaseAssetParser(HTMLParser):
             self.row = None
 
 
-def check_release_page(repository, current=VERSION, opener=None):
+def check_release_page(repository, current=VERSION, opener=None, asset_name='Logistra-Print.exe'):
     """Official release page fallback when GitHub's public API is rate limited."""
     repository = repository_name(repository)
     opener = opener or github_opener()
@@ -113,7 +125,7 @@ def check_release_page(repository, current=VERSION, opener=None):
         body = response.read(1024 * 1024 + 1)
     if len(body) > 1024 * 1024:
         raise ValueError('GitHub atbilde ir pārāk liela.')
-    expected = '/' + repository + '/releases/download/' + tag + '/Logistra-Print.exe'
+    expected = '/' + repository + '/releases/download/' + tag + '/' + asset_name
     parser = ReleaseAssetParser(expected)
     parser.feed(body.decode('utf-8'))
     if len(parser.assets) != 1:
@@ -124,11 +136,11 @@ def check_release_page(repository, current=VERSION, opener=None):
         raise ValueError('GitHub laidienam nav SHA-256 pārbaudes vērtības.')
     with opener.open(urllib.request.Request(asset['url'], headers=headers, method='HEAD'), timeout=30) as response:
         size = int(response.headers.get('Content-Length', '0'))
-    return validate_release({'tag_name': tag, 'assets': [{'name': 'Logistra-Print.exe', 'state': 'uploaded',
-        'browser_download_url': asset['url'], 'digest': asset['digest'], 'size': size}]}, repository, current)
+    return validate_release({'tag_name': tag, 'assets': [{'name': asset_name, 'state': 'uploaded',
+        'browser_download_url': asset['url'], 'digest': asset['digest'], 'size': size}]}, repository, current, asset_name)
 
 
-def check_release(repository, current=VERSION):
+def check_release(repository, current=VERSION, asset_name='Logistra-Print.exe'):
     repository = repository_name(repository)
     request = urllib.request.Request(f'https://api.github.com/repos/{repository}/releases/latest',
                                     headers={'Accept': 'application/vnd.github+json',
@@ -139,23 +151,26 @@ def check_release(repository, current=VERSION):
             body = response.read(1024 * 1024 + 1)
     except urllib.error.HTTPError as error:
         if error.code == 429 or error.code == 403 and (error.headers.get('X-RateLimit-Remaining') == '0' or error.headers.get('Retry-After')):
-            return check_release_page(repository, current)
+            if asset_name == 'Logistra-Print.exe':
+                return check_release_page(repository, current)
+            return check_release_page(repository, current, asset_name=asset_name)
         if error.code == 404:
             raise ValueError('GitHub laidieni vēl nav publicēti vai repozitorijs nav publisks.') from None
         raise ValueError(f'GitHub HTTP {error.code}.') from None
     if len(body) > 1024 * 1024:
         raise ValueError('GitHub atbilde ir pārāk liela.')
-    return validate_release(json.loads(body), repository, current)
+    return validate_release(json.loads(body), repository, current, asset_name)
 
 
 def download_release(release, directory, opener=None):
     # Recheck the trust boundary even if called with a forged result dictionary.
+    asset_name = urllib.parse.urlsplit(release['url']).path.rsplit('/', 1)[-1]
     validated = validate_release({'tag_name': 'v' + release['version'], 'assets': [{
-        'name': 'Logistra-Print.exe', 'state': 'uploaded', 'browser_download_url': release['url'],
-        'digest': 'sha256:' + release['sha256'], 'size': release['size']}]}, release['repository'], '0.0.0')
+        'name': asset_name, 'state': 'uploaded', 'browser_download_url': release['url'],
+        'digest': 'sha256:' + release['sha256'], 'size': release['size']}]}, release['repository'], '0.0.0', asset_name)
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
-    target = directory / ('Logistra-Print-' + validated['version'] + '.exe')
+    target = directory / (Path(asset_name).stem + '-' + validated['version'] + Path(asset_name).suffix)
     temporary = target.with_suffix('.part')
     request = urllib.request.Request(validated['url'], headers={'User-Agent': 'Logistra-Print/' + VERSION})
     opener = opener or github_opener()
@@ -172,8 +187,9 @@ def download_release(release, directory, opener=None):
         if size != validated['size'] or digest.hexdigest() != validated['sha256']:
             raise ValueError('Atjauninājuma SHA-256 vai izmēra pārbaude neizdevās.')
         with temporary.open('rb') as stream:
-            if stream.read(2) != b'MZ':
-                raise ValueError('Atjauninājums nav Windows EXE.')
+            magic = stream.read(4)
+            if asset_name.endswith('.exe') and magic[:2] != b'MZ' or asset_name.endswith('.zip') and magic != b'PK\x03\x04':
+                raise ValueError('Atjauninājuma faila formāts nav derīgs.')
         temporary.replace(target)
         return target
     finally:
@@ -209,19 +225,27 @@ def replacement_script(staged, target, expected_hash, parent_pid, hidden=False, 
     arguments = '--start-hidden' if hidden else '--after-update'
     if resume:
         arguments += ' --resume-automation'
+    # A frozen process inherits the old onefile extraction directory. Force a
+    # fresh independent bootloader run after the old process removes that folder.
+    script += '$env:PYINSTALLER_RESET_ENVIRONMENT="1"; '
     script += 'Start-Process -FilePath $target -ArgumentList ' + quote(arguments) + ' -WorkingDirectory ' + quote(target.parent) + ' -WindowStyle Hidden'
     return script
 
 
 def launch_replacement(staged, expected_hash, hidden=False, resume=False):
+    if sys.platform == 'darwin' and getattr(sys, 'frozen', False):
+        from mac_updater import launch_replacement as launch_mac
+        return launch_mac(staged, expected_hash, hidden, resume)
     if os.name != 'nt' or not getattr(sys, 'frozen', False):
         raise ValueError('Automātiska EXE aizstāšana pieejama Windows EXE versijā.')
     script = replacement_script(staged, sys.executable, expected_hash, os.getpid(), hidden, resume)
     # Persist diagnostics beside the staged download, never in user shipment data.
     log = Path(staged).parent / 'update.log'
     quote = lambda value: "'" + str(value).replace("'", "''") + "'"
-    script = 'try { ' + script + ' } catch { $_ | Out-File -LiteralPath ' + quote(log) + ' -Encoding utf8; exit 1 }'
+    script = 'try { ' + script + ' } catch { $_ | Out-File -LiteralPath ' + quote(log) + ' -Encoding utf8; '
+    script += 'Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.MessageBox]::Show("Update failed. Open Logistra again. Details: " + ' + quote(log) + ', "Logistra Print"); exit 1 }'
     return subprocess.Popen(['powershell.exe', '-NoProfile', '-NonInteractive', '-EncodedCommand',
                              base64.b64encode(script.encode('utf-16le')).decode('ascii')],
                             creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS,
+                            env={**os.environ, 'PYINSTALLER_RESET_ENVIRONMENT': '1'},
                             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
