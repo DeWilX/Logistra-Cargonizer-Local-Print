@@ -109,12 +109,12 @@ Pk|Fr|Fr
 Se|Sa|Lø
 Sv|Su|Sø
 Printeris un PDF testa druka|Printer and PDF test print|Skriver og PDF-testutskrift
-Izvēlies printeri un spied “Izdrukāt PDF”. Iebūvēta testa lapa: 102 × 192 mm.|Choose a printer and click “Print PDF”. Built-in test page: 102 × 192 mm.|Velg skriver og klikk «Skriv ut PDF». Innebygd testside: 102 × 192 mm.
+Izvēlies printeri un spied “Testa print”. Iebūvēta testa lapa: 102 × 192 mm.|Choose a printer and click “Test print”. Built-in test page: 102 × 192 mm.|Velg skriver og klikk «Testutskrift». Innebygd testside: 102 × 192 mm.
 PDF drukāšanas programma (Adobe: Acrobat.exe vai AcroRd32.exe)|PDF printing program (Adobe: Acrobat.exe or AcroRd32.exe)|PDF-utskriftsprogram (Adobe: Acrobat.exe eller AcroRd32.exe)
 Atsvaidzināt|Refresh|Oppdater
 Atsvaidzināt printerus|Refresh printers|Oppdater skrivere
 Saglabāt printeri|Save printer|Lagre skriver
-Izdrukāt PDF|Print PDF|Skriv ut PDF
+Testa print|Test print|Testutskrift
 Izvēlēties EXE|Choose EXE|Velg EXE
 Pādrukāt etiķeti — izvēlies saglabātu ID vai ievadi sūtījuma ID|Reprint label — choose a saved ID or enter a shipment ID|Skriv ut etikett på nytt — velg lagret ID eller angi sendings-ID
 Katra pādruka izdrukā vēl vienu kopiju. Microsoft Print to PDF vietā saglabā oriģinālā PDF kopiju izvēlētajā mapē; printera pārbaude netiek veikta.|Each reprint creates one more copy. Microsoft Print to PDF saves the original PDF to your chosen folder; it does not verify a physical printer.|Hver ny utskrift lager én ekstra kopi. Microsoft Print to PDF lagrer original PDF i valgt mappe; det kontrollerer ikke en fysisk skriver.
@@ -182,6 +182,18 @@ Izvēlies PDF drukāšanas programmu|Choose PDF printing program|Velg PDF-utskri
 Printeri nav atrasti. Instalē printera draiveri un atsvaidzini sarakstu.|No printers found. Install the printer driver and refresh the list.|Ingen skrivere funnet. Installer skriverdriveren og oppdater listen.
 Printeris saglabāts. Ja fona skripts jau darbojas, restartē to, lai lietotu jauno izvēli.|Printer saved. Restart the background worker to use the new selection.|Skriver lagret. Start bakgrunnsjobben på nytt for å bruke det nye valget.
 Saglabā testa PDF…|Saving test PDF…|Lagrer test-PDF…
+Konts ir pārbaudīts un pieslēgts.|The account connection has been verified.|Kontotilkoblingen er kontrollert.
+Nav norādīts Sender ID. Ievadi Sender ID un API atslēgu iestatījumos.|Sender ID is missing. Enter your Sender ID and API key in Settings.|Sender ID mangler. Skriv inn Sender ID og API-nøkkel i innstillingene.
+Konts vēl nav pārbaudīts. Iestatījumos nospied “Saglabāt un pārbaudīt”.|The account has not been verified. Click “Save and verify” in Settings.|Kontoen er ikke kontrollert. Klikk på «Lagre og kontroller» i innstillingene.
+Printeris nav izvēlēts. Izvēlies un saglabā printeri sadaļā “Printeris un PDF”.|No printer is selected. Choose and save a printer under “Printer and PDF”.|Ingen skriver er valgt. Velg og lagre en skriver under «Skriver og PDF».
+Saglabātais printeris nav atrasts. Pievieno printeri datoram un atsvaidzini printeru sarakstu.|The saved printer was not found. Connect it to the computer and refresh the printer list.|Den lagrede skriveren ble ikke funnet. Koble den til datamaskinen og oppdater skriverlisten.
+Izvēlēts PDF eksports. Fiziskā printera testa druka vēl nav apstiprināta.|PDF export is selected. A physical printer test has not been confirmed.|PDF-eksport er valgt. Testutskrift på en fysisk skriver er ikke bekreftet.
+Printeris ir atrasts un testa druka apstiprināta.|The printer was found and its test print is confirmed.|Skriveren er funnet og testutskriften er bekreftet.
+Printeris ir atrasts, bet testa druka nav apstiprināta vai drukas iestatījumi ir mainīti. Pārbaudi testa etiķeti.|The printer was found, but its test print is unconfirmed or print settings have changed. Check the test label.|Skriveren er funnet, men testutskriften er ikke bekreftet eller utskriftsinnstillingene er endret. Kontroller testetiketten.
+Sūtījumu saraksta pārbaude ir apstiprināta.|The shipment list check is confirmed.|Kontroll av sendingslisten er bekreftet.
+Sūtījumi veiksmīgi ielādēti. Tukšs saraksts nav kļūda.|Shipments loaded successfully. An empty list is not an error.|Sendinger er lastet inn. En tom liste er ikke en feil.
+Sūtījumu ielāde neizdevās. Kļūdas apraksts redzams Darbību žurnālā. Mēģini ielādēt vēlreiz.|Shipment loading failed. See the Activity log for details and try loading again.|Innlasting av sendinger mislyktes. Se aktivitetsloggen for detaljer og prøv igjen.
+Sūtījumu saraksts vēl nav pārbaudīts. Pārbaudi jaunu atvērtu sūtījumu un apstiprini saraksta pārbaudi. Tukšs saraksts nav kļūda.|The shipment list has not been verified. Check a new open shipment and confirm the list check. An empty list is not an error.|Sendingslisten er ikke kontrollert. Kontroller en ny åpen sending og bekreft kontrollen av listen. En tom liste er ikke en feil.
 Atjauninājumi|Updates|Oppdateringer
 Versija: |Version: |Versjon:
 Izstrādātājs: Gustavs Meijers|Developer: Gustavs Meijers|Utvikler: Gustavs Meijers
@@ -207,6 +219,9 @@ for line in CATALOG.splitlines():
         TRANSLATIONS[language][original] = value
 
 
+TRANSLATION_PATTERN = re.compile(r'(?<!\w)(?:' + '|'.join(re.escape(key) for key in sorted(TRANSLATIONS['en'], key=len, reverse=True) if len(key) >= 4) + r')(?!\w)')
+
+
 class Locale:
     def __init__(self, language='lv'):
         self.language = language if language in LANGUAGES else 'lv'
@@ -229,8 +244,7 @@ class Locale:
         for expression, english, norwegian in templates:
             value = re.sub(expression, lambda match: (english if self.language == 'en' else norwegian).format(*match.groups()), value)
         # Only whole words/phrases are translated; names, references and dates are retained.
-        pattern = '|'.join(re.escape(key) for key in sorted(catalog, key=len, reverse=True) if len(key) >= 4)
-        return re.sub(r'(?<!\w)(?:' + pattern + r')(?!\w)', lambda match: catalog[match[0]], value)
+        return TRANSLATION_PATTERN.sub(lambda match: catalog[match[0]], value)
 
     def set_language(self, language):
         self.language = language
@@ -265,6 +279,8 @@ def install_widgets():
             self._original_values = kwargs.get('values')
             self._headings = {}
             self._mirrors = []
+            self._locale_callbacks = []
+            self._trace_tokens = []
             if self._locale:
                 if 'text' in kwargs:
                     kwargs['text'] = self._locale.translate(kwargs['text'])
@@ -290,14 +306,27 @@ def install_widgets():
                                 model.set(original)
                             finally:
                                 busy[0] = False
-                    model.trace_add('write', refresh)
-                    display.trace_add('write', changed)
+                    self._trace_tokens.extend([(model, model.trace_add('write', refresh)), (display, display.trace_add('write', changed))])
                     kwargs['textvariable'] = display
                     self._mirrors.append((model, display, refresh, changed))
                     self._locale.refreshers.append(refresh)
+                    self._locale_callbacks.append(refresh)
             super().__init__(master, **kwargs)
             if self._locale:
                 self._locale.refreshers.append(self._refresh_language)
+                self._locale_callbacks.append(self._refresh_language)
+                self.bind('<Destroy>', self._release_locale, add='+')
+
+        def _release_locale(self, event):
+            if event.widget != self:
+                return
+            for callback in self._locale_callbacks:
+                if callback in self._locale.refreshers:
+                    self._locale.refreshers.remove(callback)
+            self._locale_callbacks.clear()
+            for variable, token in self._trace_tokens:
+                variable.trace_remove('write', token)
+            self._trace_tokens.clear()
 
         def _refresh_language(self):
             values = {}

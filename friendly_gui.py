@@ -17,6 +17,7 @@ from ui_theme import apply_theme, asset, window_geometry, set_theme_mode
 from navigation import SectionNavigation, ScrollableSection
 from localization import LANGUAGES, Locale, install_widgets, translate
 from version import VERSION, UPDATE_REPOSITORY
+from tooltips import Tooltip
 
 
 def verify_open_shipment(cfg, identifier):
@@ -46,6 +47,22 @@ def prepare_baseline(cfg):
 def print_setup_matches(cfg):
     identity = [cfg.get('printer'), cfg.get('print_backend'), str(engine.pdf_executable(cfg))]
     return bool(not engine.is_pdf_export_printer(cfg) and cfg.get('printer_tested') and cfg.get('tested_print_setup') == identity)
+
+
+def status_explanations(cfg, names, loaded=None):
+    account = ('Konts ir pārbaudīts un pieslēgts.' if cfg.get('api_verified') else
+               'Nav norādīts Sender ID. Ievadi Sender ID un API atslēgu iestatījumos.' if not cfg.get('sender_id') else
+               'Konts vēl nav pārbaudīts. Iestatījumos nospied “Saglabāt un pārbaudīt”.')
+    printer = ('Printeris nav izvēlēts. Izvēlies un saglabā printeri sadaļā “Printeris un PDF”.' if not cfg.get('printer') else
+               'Saglabātais printeris nav atrasts. Pievieno printeri datoram un atsvaidzini printeru sarakstu.' if cfg.get('printer') not in names else
+               'Izvēlēts PDF eksports. Fiziskā printera testa druka vēl nav apstiprināta.' if engine.is_pdf_export_printer(cfg) else
+               'Printeris ir atrasts un testa druka apstiprināta.' if print_setup_matches(cfg) else
+               'Printeris ir atrasts, bet testa druka nav apstiprināta vai drukas iestatījumi ir mainīti. Pārbaudi testa etiķeti.')
+    shipments = ('Sūtījumi veiksmīgi ielādēti. Tukšs saraksts nav kļūda.' if loaded is True else
+                 'Sūtījumu ielāde neizdevās. Kļūdas apraksts redzams Darbību žurnālā. Mēģini ielādēt vēlreiz.' if loaded is False else
+                 'Sūtījumu saraksta pārbaude ir apstiprināta.' if cfg.get('list_verified') else
+                 'Sūtījumu saraksts vēl nav pārbaudīts. Pārbaudi jaunu atvērtu sūtījumu un apstiprini saraksta pārbaudi. Tukšs saraksts nav kļūda.')
+    return account, printer, shipments
 
 
 class FriendlyApp(App):
@@ -100,10 +117,16 @@ class FriendlyApp(App):
         status_row = ttk.Frame(shell)
         status_row.pack(anchor='w', pady=(0, 10))
         self.status_dots = []
+        self.status_hints = []
+        self.status_tooltips = []
         for label in ('Konts', 'Printeris', 'Sūtījumi'):
             dot = ttk.Label(status_row, text='●', foreground='#ef4444', font=('Segoe UI', 12))
             dot.pack(side='left', padx=(0, 5))
-            ttk.Label(status_row, text=label).pack(side='left', padx=(0, 20))
+            caption = ttk.Label(status_row, text=label)
+            caption.pack(side='left', padx=(0, 20))
+            hint = tk.StringVar(master=root)
+            self.status_hints.append(hint)
+            self.status_tooltips.append(Tooltip((dot, caption), hint))
             self.status_dots.append(dot)
         self.tabs = SectionNavigation(shell)
         self.tabs.pack(fill='both', expand=True)
@@ -349,6 +372,16 @@ class FriendlyApp(App):
         if self.task_busy:
             self.root.after(500, self.load_on_open)
             return
+        if sys.platform == 'darwin':
+            # Keychain may wait for macOS permission; keep navigation responsive.
+            def key_available():
+                try:
+                    engine.api_key()
+                    return True
+                except Exception:
+                    return False
+            self.task(key_available, lambda available: self.shipments_browser.load() if available else None)
+            return
         try:
             engine.api_key()
         except Exception:
@@ -396,8 +429,13 @@ class FriendlyApp(App):
         self.summary.set(f'Printeris: {cfg.get("printer") if printer_found else "nav iestatīts"}   •   Sender ID: {cfg.get("sender_id") or "nav iestatīts"}')
         steps = [('Konts pieslēgts', cfg.get('api_verified')), ('Printeris apstiprināts', printer_ready), ('Sūtījumu ielāde apstiprināta', cfg.get('list_verified'))]
         self.progress.set('   •   '.join(('✓ ' if done else 'Nav pārbaudīts: ') + name for name, done in steps))
-        for dot, (_, done) in zip(self.status_dots, steps):
+        loaded = getattr(self.shipments_browser, 'load_succeeded', None) if hasattr(self, 'shipments_browser') else None
+        dot_states = [steps[0][1], printer_ready, loaded is True or loaded is None and bool(cfg.get('list_verified'))]
+        for dot, done in zip(self.status_dots, dot_states):
             dot.configure(foreground='#16a34a' if done else '#ef4444')
+        for hint, explanation in zip(getattr(self, 'status_hints', []), status_explanations(cfg, self.printer_ui.names, loaded)):
+            if hint.get() != explanation:
+                hint.set(explanation)
         state = (tuple(bool(done) for _, done in steps), bool(cfg.get('setup_dismissed')))
         if state != self.setup_state:
             self.setup_state = state

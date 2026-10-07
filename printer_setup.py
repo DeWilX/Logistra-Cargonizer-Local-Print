@@ -209,7 +209,7 @@ class PrinterWindow:
         frame.pack(fill='both', expand=True)
         frame.columnconfigure(0, weight=1)
         ttk.Label(frame, text='Printeris un PDF testa druka', font=('Segoe UI', 18, 'bold')).grid(row=0, column=0, columnspan=2, sticky='w', pady=(0, 8))
-        ttk.Label(frame, text='Izvēlies printeri un spied “Izdrukāt PDF”. Iebūvēta testa lapa: 102 × 192 mm.', wraplength=670).grid(row=1, column=0, columnspan=2, sticky='w', pady=(0, 18))
+        ttk.Label(frame, text='Izvēlies printeri un spied “Testa print”. Iebūvēta testa lapa: 102 × 192 mm.', wraplength=670).grid(row=1, column=0, columnspan=2, sticky='w', pady=(0, 18))
         ttk.Label(frame, text='Printeris').grid(row=2, column=0, sticky='w')
         self.picker = ttk.Combobox(frame, textvariable=self.printer, state='readonly')
         self.picker.grid(row=3, column=0, sticky='ew', padx=(0, 12), pady=(5, 12))
@@ -219,7 +219,7 @@ class PrinterWindow:
         self.button(frame, 'Izvēlēties EXE', self.choose_executable, 5)
         actions = ttk.Frame(frame)
         actions.grid(row=8, column=0, columnspan=2, sticky='w', pady=(5, 14))
-        for label, callback in [('Saglabāt printeri', self.save), ('Izdrukāt PDF', self.print_selected)]:
+        for label, callback in [('Saglabāt printeri', self.save), ('Testa print', self.print_selected)]:
             button = ttk.Button(actions, text=label, command=callback)
             button.pack(side='left', padx=(0, 12))
             self.buttons.append(button)

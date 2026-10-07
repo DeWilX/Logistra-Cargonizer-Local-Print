@@ -17,6 +17,7 @@ class ScrollableSection(ttk.Frame):
         self.body = ttk.Frame(self.canvas, padding=padding)
         self.body._navigation_section = self
         self.content_id = self.canvas.create_window((0, 0), window=self.body, anchor='nw')
+        self.content_size = None
         self.body.bind('<Configure>', self.resize)
         self.canvas.bind('<Configure>', self.resize)
         root = self.winfo_toplevel()
@@ -25,8 +26,11 @@ class ScrollableSection(ttk.Frame):
         self.update_theme()
 
     def resize(self, _=None):
-        self.canvas.itemconfigure(self.content_id, width=self.canvas.winfo_width(),
-                                  height=max(self.canvas.winfo_height(), self.body.winfo_reqheight()))
+        size = (self.canvas.winfo_width(), max(self.canvas.winfo_height(), self.body.winfo_reqheight()))
+        if size == self.content_size:
+            return
+        self.content_size = size
+        self.canvas.itemconfigure(self.content_id, width=size[0], height=size[1])
         self.canvas.configure(scrollregion=self.canvas.bbox('all'))
 
     def wheel(self, event):
@@ -56,9 +60,12 @@ class SectionNavigation(ttk.Frame):
     def add(self, frame, text):
         button = ttk.Button(self.bar, text=text, style='Nav.TButton', command=lambda: self.select(frame))
         self.items.append((frame, button))
+        frame.place(in_=self.content, x=0, y=0, relwidth=1, relheight=1)
         self.reorder()
         if self.active is None:
             self.select(frame)
+        else:
+            self.active.tkraise()
 
     def insert(self, index, frame):
         item = next(item for item in self.items if item[0] == frame)
@@ -78,8 +85,9 @@ class SectionNavigation(ttk.Frame):
         if isinstance(frame, int):
             frame = self.items[frame][0]
         frame = getattr(frame, '_navigation_section', frame)
+        if frame == self.active:
+            return
         for section, button in self.items:
-            section.pack_forget()
             button.configure(style='NavActive.TButton' if section == frame else 'Nav.TButton')
-        frame.pack(in_=self.content, fill='both', expand=True)
+        frame.tkraise()
         self.active = frame

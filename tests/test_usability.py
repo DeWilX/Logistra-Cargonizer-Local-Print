@@ -31,6 +31,7 @@ class UsabilityTests(unittest.TestCase):
         app.closing = False
         app.task_busy = False
         app.shipments_browser = Mock()
+        app.task = lambda action, completed: completed(action())
         app.root = Mock()
         with patch.object(gui.engine, 'api_key', return_value='test'), patch.object(gui.sys, 'argv', ['app.exe']):
             app.load_on_open()

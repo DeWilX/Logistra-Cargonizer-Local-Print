@@ -29,6 +29,7 @@ if sys.platform not in ('win32', 'darwin'):
     raise SystemExit('Build on Windows or macOS; cross compilation is not supported.')
 app_name = 'Logistra-Print' if sys.platform == 'win32' else 'Logistra'
 command = [sys.executable, '-m', 'PyInstaller', '--noconfirm', '--clean', '--windowed', '--name', app_name, '--distpath', str(dist),
+           '--add-data', str(root / 'LICENSE') + ':.',
            '--add-data', str(root / 'config.defaults.json') + ':.', '--add-data', str(release_info) + ':.', '--add-data', str(root / 'assets') + ':assets', '--hidden-import', 'mac_support',
            '--icon', str(root / 'assets' / ('logistra.icns' if sys.platform == 'darwin' else 'logistra.ico'))]
 certificate = ssl.get_default_verify_paths().cafile
@@ -50,11 +51,13 @@ if sys.platform == 'darwin':
         staging = Path(folder)
         subprocess.run(['/usr/bin/ditto', str(dist / 'Logistra.app'), str(staging / 'Logistra.app')], check=True)
         shutil.copy2(root / 'README-macOS.md', staging / 'README-macOS.md')
+        shutil.copy2(root / 'LICENSE', staging / 'LICENSE')
         subprocess.run(['/usr/bin/ditto', '-c', '-k', '--sequesterRsrc', str(staging), str(target)], check=True)
 else:
     target = dist / 'Logistra-Windows-exe.zip'
     with ZipFile(target, 'w', ZIP_DEFLATED) as archive:
         archive.write(dist / f'{app_name}.exe', f'{app_name}.exe')
+        archive.write(root / 'LICENSE', 'LICENSE')
         instructions = root / 'LIETOSANA-Windows.txt'
         if instructions.is_file():
             archive.write(instructions, instructions.name)

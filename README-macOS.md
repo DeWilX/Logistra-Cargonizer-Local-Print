@@ -26,7 +26,7 @@ Aizver veco Logistra kopiju, lejupielādē savam procesoram paredzēto jaunāko 
 
 Iestatījumos ievadi savu Sender ID un API atslēgu, saglabā un pārbaudi pieslēgumu. Nav iepriekš aizpildīta konta vai printera. Atslēga glabājas macOS login Keychain, nevis konfigurācijā vai žurnālā. Windows DPAPI failu uz Mac pārnest nevar.
 
-Izvēlies printeri, kas pievienots System Settings → Printers & Scanners. Lietotne izmanto CUPS rindas un `lp`, vienu kopiju un `print-scaling=none`. Poga Izdrukāt PDF nosūta iekļauto 102 × 192 mm testa etiķeti; pirms drukāšanas pārbaudi draivera papīra izmēru. Sekmīga nosūtīšana rindai nenozīmē, ka etiķete fiziski izdrukāta.
+Izvēlies printeri, kas pievienots System Settings → Printers & Scanners. Lietotne izmanto CUPS rindas un `lp`, vienu kopiju un `print-scaling=none`. Poga Testa print nosūta iekļauto 102 × 192 mm testa etiķeti; pirms drukāšanas pārbaudi draivera papīra izmēru. Sekmīga nosūtīšana rindai nenozīmē, ka etiķete fiziski izdrukāta.
 
 Iestatījumi, žurnāls un SQLite uzskaite glabājas `~/Library/Application Support/Logistra`. PDF mapi var izvēlēties iestatījumos. Lietotnes aizstāšana ar jaunāku versiju saglabā šos datus. Vienam Sender ID automātisko druku vienlaikus darbini vienā datorā.
 
@@ -39,3 +39,7 @@ Palaišanai no pirmkoda instalē Python 3.12 ar Tkinter, atkarības no `requirem
 ## Atbalsts projektam
 
 Izstrādātājs: **Gustavs Meijers**. Ja lietotne noder, vari atbalstīt tās attīstību ar [ziedojumu Ko-fi](https://ko-fi.com/gustavsm).
+
+## Licence
+
+No versijas 0.1.6 atļauta lietošana uzņēmumā, modificēšana un bezmaksas izplatīšana. Programmu vai tās modificētās versijas nedrīkst pārdot vai izplatīt par maksu bez autora rakstiskas atļaujas. Pilns teksts iekļauts failā LICENSE. Iepriekš ar MIT licenci izplatītās kopijas saglabā savas sākotnējās tiesības.

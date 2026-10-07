@@ -1,21 +1,40 @@
-MIT License
+Logistra Print No-Sale License, Version 1.0
+SPDX-License-Identifier: LicenseRef-Logistra-NoSale-1.0
 
-Copyright (c) 2026 Gustavs
+Copyright (c) 2026 Gustavs Meijers
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. Permission
+Permission is granted, free of charge, to use, copy, study, modify and
+distribute Logistra Print and its associated documentation (the Software),
+including modified versions, subject to the conditions below. Use within
+businesses and commercial operations, including printing shipping labels,
+is permitted.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+2. No sale or paid distribution
+You may not sell the Software or modified versions, charge for a license,
+download, subscription or access to the Software, or distribute it as part
+of a paid software bundle, without prior written permission from the
+copyright holder. Free distribution is permitted. Voluntary donations that
+do not condition access to or use of the Software are permitted.
 
+3. Notices and modifications
+Every redistributed copy, including a modified version, must include this
+license and the copyright notice. Modified versions must clearly identify
+that they have been modified and remain subject to this license. You may
+not grant recipients rights that contradict these conditions. This license
+does not grant rights to use the author's name to endorse a modified version.
+
+4. Third-party components and earlier versions
+Third-party dependencies retain their own licenses; this license does not
+replace or restrict those licenses. Copies previously distributed under
+the MIT License retain the permissions granted with those copies. This
+license applies to Logistra Print releases from version 0.1.6 onward and
+to the author's code distributed with this license.
+
+5. Disclaimer
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+IMPLIED, INCLUDING BUT NOT LIMITED TO MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NON-INFRINGEMENT. TO THE EXTENT PERMITTED BY LAW,
+THE COPYRIGHT HOLDER IS NOT LIABLE FOR CLAIMS, DAMAGES OR OTHER LIABILITY
+ARISING FROM THE SOFTWARE OR ITS USE. Rights that cannot legally be
+excluded remain unaffected.

@@ -84,10 +84,10 @@ def parse_date_range(start, end):
     return start, end
 
 
-def load_shipments(cfg, view='Visi', start=None, end=None, progress=None):
+def load_shipments(cfg, view='Visi', start=None, end=None, progress=None, fresh=False):
     if start and end and start > end:
         raise ValueError('Sākuma datumam jābūt pirms beigu datuma.')
-    client = Client(cfg)
+    client = Client({**cfg, '_fresh_api': True} if fresh else cfg)
     query = {'page': 1, 'per_page': 100}
     if view == 'Visi':
         query['state[]'] = 'all'
@@ -154,6 +154,8 @@ class ShipmentBrowser:
     def __init__(self, parent, app):
         self.app = app
         self.rows = []
+        self.load_succeeded = None
+        self.render_after = None
         self.filter_after = None
         self.loaded_view = 'Visi'
         self.loaded_period = None
@@ -201,7 +203,7 @@ class ShipmentBrowser:
         ttk.Label(parent, textvariable=self.filter_info, wraplength=1000).pack(anchor='w', pady=(0, 10))
         controls = ttk.Frame(parent)
         controls.pack(fill='x', pady=(0, 12))
-        app.button(controls, 'Ielādēt sūtījumus', self.load)
+        app.button(controls, 'Ielādēt sūtījumus', lambda: self.load(fresh=True))
         app.button(controls, 'Lejupielādēt PDF', lambda: self.selected_action(app.download))
         app.button(controls, 'Pādrukāt etiķeti', lambda: self.selected_action(app.quick_reprint))
         ttk.Button(controls, text='Atvērt PDF mapi', command=app.open_folder).pack(side='left', padx=(0, 10))
@@ -271,7 +273,7 @@ class ShipmentBrowser:
         for tag, background in [('even', '#f4f7fc'), ('odd', '#ffffff')]:
             self.table.tag_configure(tag, background=theme_color(self.table, background), foreground=theme_color(self.table, '#243247'))
 
-    def load(self):
+    def load(self, fresh=False):
         from logistra_gui import read_config
         if self.app.task_busy:
             self.view.set(self.loaded_view)
@@ -287,17 +289,19 @@ class ShipmentBrowser:
         def action():
             try:
                 progress = lambda message: self.app.events.put(('log', message))
-                return load_shipments(cfg, view, start, end, progress), None
+                return load_shipments(cfg, view, start, end, progress, fresh=fresh), None
             except Exception as error:
                 return None, str(error)
         def completed(result):
             rows, error = result
             if error:
+                self.load_succeeded = False
                 self.view.set(self.loaded_view)
                 self.notice.set('Ielāde neizdevās: ' + error)
                 self.app.log('Sūtījumu ielāde neizdevās: ' + error)
                 return
             self.loaded_view = view
+            self.load_succeeded = True
             self.loaded_period = (start, end)
             self.rows = rows
             carriers = sorted({row['carrier'] for row in rows if row['carrier']})
@@ -320,6 +324,9 @@ class ShipmentBrowser:
             self.render()
 
     def render(self):
+        if self.render_after is not None:
+            self.table.after_cancel(self.render_after)
+            self.render_after = None
         if self.filter_after is not None:
             self.table.after_cancel(self.filter_after)
             self.filter_after = None
@@ -333,12 +340,19 @@ class ShipmentBrowser:
             return
         self.table.delete(*self.table.get_children())
         states = {'open': translate(self.table, 'Atvērts'), 'transferred': translate(self.table, 'Nosūtīts')}
-        for index, row in enumerate(rows):
-            try:
-                display_date = datetime.fromisoformat(row['created'].replace('Z', '+00:00')).astimezone().strftime('%d.%m.%Y')
-            except ValueError:
-                display_date = '—'
-            self.table.insert('', 'end', iid=row['id'], image=self.action_image, values=(row['recipient'], row['address'], row['carrier'], row['product'], row['reference'], row['items'], display_date, row['number'], states.get(row['state'], row['state'])), tags=('even' if index % 2 == 0 else 'odd',))
+        def insert_batch(start_index=0):
+            self.render_after = None
+            end_index = min(start_index + 100, len(rows))
+            for index in range(start_index, end_index):
+                row = rows[index]
+                try:
+                    display_date = datetime.fromisoformat(row['created'].replace('Z', '+00:00')).astimezone().strftime('%d.%m.%Y')
+                except ValueError:
+                    display_date = '—'
+                self.table.insert('', 'end', iid=row['id'], image=self.action_image, values=(row['recipient'], row['address'], row['carrier'], row['product'], row['reference'], row['items'], display_date, row['number'], states.get(row['state'], row['state'])), tags=('even' if index % 2 == 0 else 'odd',))
+            if end_index < len(rows):
+                self.render_after = self.table.after(1, lambda: insert_batch(end_index))
+        insert_batch()
         self.notice.set(f'Rāda {len(rows)} no {len(self.rows)} ielādētajiem sūtījumiem. Izvēlies sūtījumu, lai lejupielādētu vai pādrukātu etiķeti.')
         dates = []
         for row in self.rows:

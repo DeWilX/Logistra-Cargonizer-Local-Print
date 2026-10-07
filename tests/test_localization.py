@@ -11,6 +11,8 @@ class LocalizationTests(unittest.TestCase):
         self.assertEqual(Locale('nb').translate('Printeris: nav iestatīts'), 'Skriver: ikke konfigurert')
         self.assertEqual(set(TRANSLATIONS['en']), set(TRANSLATIONS['nb']))
         self.assertEqual(Locale('en').translate('ORD-123456789'), 'ORD-123456789')
+        for language, label in [('lv', 'Testa print'), ('en', 'Test print'), ('nb', 'Testutskrift')]:
+            self.assertEqual(Locale(language).translate('Testa print'), label)
 
     def test_language_switch_updates_labels_and_preserves_filter_model(self):
         was_enabled = gc.isenabled()

@@ -2,6 +2,8 @@
 from pathlib import Path
 import sys
 import subprocess
+import queue
+import threading
 import tkinter as tk
 from tkinter import ttk
 
@@ -47,6 +49,25 @@ def theme_color(widget, light):
 
 def watch_theme(root):
     if getattr(root, '_logistra_theme_mode', 'system') == 'system':
+        if sys.platform == 'darwin':
+            # Never wait for the defaults subprocess in Tk's event loop.
+            results = queue.Queue()
+            def detect():
+                results.put(system_dark_mode())
+            def receive():
+                try:
+                    dark = results.get_nowait()
+                except queue.Empty:
+                    root.after(50, receive)
+                    return
+                root._logistra_system_dark = dark
+                if getattr(root, '_logistra_theme_mode', 'system') == 'system' and dark != root._logistra_dark:
+                    apply_theme(root, dark)
+                    root.event_generate('<<LogistraThemeChanged>>')
+            threading.Thread(target=detect, daemon=True).start()
+            root.after(50, receive)
+            root.after(5000, lambda: watch_theme(root))
+            return
         dark = system_dark_mode()
         if dark != root._logistra_dark:
             apply_theme(root, dark)
@@ -65,7 +86,13 @@ def set_theme_mode(root, mode):
 def apply_theme(root, dark=None):
     if dark is None:
         mode = getattr(root, '_logistra_theme_mode', 'system')
-        dark = system_dark_mode() if mode == 'system' else mode == 'dark'
+        if mode == 'system':
+            dark = getattr(root, '_logistra_system_dark', None) if sys.platform == 'darwin' else None
+            if dark is None:
+                dark = system_dark_mode()
+                root._logistra_system_dark = dark
+        else:
+            dark = mode == 'dark'
     root._logistra_dark = dark
     def c(value):
         return DARK_COLORS.get(value, value) if root._logistra_dark else value

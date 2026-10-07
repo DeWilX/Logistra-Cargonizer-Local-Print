@@ -21,6 +21,8 @@ The API key is protected with Windows DPAPI. User settings, the key and printing
 - SQLite duplicate protection, initial baseline and no automatic retries of uncertain print jobs.
 - Adobe Reader or SumatraPDF printing. Microsoft Print to PDF saves the original PDF instead of reprinting through Adobe.
 - GitHub release update checking, verified download, backup and EXE replacement after active work finishes.
+- Hover explanations for account, printer and shipment status. Successful shipment loading, including an empty list, turns the shipment indicator green; automatic printing verification remains separate.
+- Bounded in-memory API cache: history lists for two seconds and shipment details for thirty seconds. Manual reload, automatic discovery and PDF requests always use fresh API data.
 
 Print commands do not prove that a physical label was printed. Install the printer driver, choose the correct paper size and verify barcodes. The included test page is 102 × 192 mm. Automatic discovery currently rejects multiple pages of new shipments; history browsing supports all pages.
 
@@ -53,3 +55,7 @@ macOS builds are available in GitHub Releases and include Python. Automatic EXE 
 ## Support the project
 
 Developed by **Gustavs Meijers**. If Logistra Print helps you, you can support its development with a [donation on Ko-fi](https://ko-fi.com/gustavsm).
+
+## License
+
+From version 0.1.6, [Logistra Print No-Sale License](LICENSE) permits use, including within businesses, modification and free redistribution. Selling the app or modified versions, paid access and paid software bundles require the author's written permission. This is a custom source-available license with a no-sale restriction. Earlier MIT-licensed copies retain their original permissions; third-party dependencies retain their own licenses.

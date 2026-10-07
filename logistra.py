@@ -1,6 +1,8 @@
 """Cargonizer PDF download and Windows print worker; Python 3.10+, stdlib only."""
 import argparse
 import contextlib
+from collections import OrderedDict
+import hashlib
 import json
 import os
 import re
@@ -9,6 +11,7 @@ import sqlite3
 import subprocess
 import sys
 import time
+import threading
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -18,6 +21,17 @@ from network_tls import verified_context
 
 ROOT = application_root()
 BASE = 'https://api.cargonizer.no'
+_api_cache = OrderedDict()
+_api_cache_lock = threading.Lock()
+
+
+def api_cache_ttl(path):
+    endpoint = urllib.parse.urlsplit(path).path
+    if endpoint == '/consignments.xml':
+        return 2
+    if re.fullmatch(r'/consignments/[1-9][0-9]*\.xml', endpoint):
+        return 30
+    return 0
 
 
 def shipment_id(value):
@@ -56,12 +70,21 @@ class Client:
         self.pagination = {}
         self.references = {}
 
-    def get(self, path):
+    def get(self, path, fresh=False):
         if not path.startswith('/') or path.startswith('//') or '#' in path:
             raise ValueError('API path must be relative to api.cargonizer.no.')
         wait = Client.retry_not_before - time.monotonic()
         if wait > 0:
             raise RuntimeError(f'API pieprasījumu limits; nākamais mēģinājums pēc {int(wait) + 1} sekundēm.')
+        ttl = api_cache_ttl(path)
+        cache_key = (str(self.cfg['sender_id']), hashlib.sha256(self.key.encode()).digest(), path)
+        if ttl and not fresh and not self.cfg.get('_fresh_api'):
+            with _api_cache_lock:
+                cached = _api_cache.get(cache_key)
+                if cached and cached[0] > time.monotonic():
+                    _api_cache.move_to_end(cache_key)
+                    self.pagination = dict(cached[2])
+                    return cached[1]
         req = urllib.request.Request(BASE + path, headers={
             'X-Cargonizer-Key': self.key,
             'X-Cargonizer-Sender': str(self.cfg['sender_id'])})
@@ -72,6 +95,12 @@ class Client:
                 body = response.read(32 * 1024 * 1024 + 1)
                 if len(body) > 32 * 1024 * 1024:
                     raise RuntimeError('API response exceeds 32 MB.')
+                if ttl and len(body) <= 8 * 1024 * 1024:
+                    with _api_cache_lock:
+                        _api_cache[cache_key] = (time.monotonic() + ttl, body, dict(self.pagination))
+                        _api_cache.move_to_end(cache_key)
+                        while len(_api_cache) > 128 or sum(len(item[1]) for item in _api_cache.values()) > 8 * 1024 * 1024:
+                            _api_cache.popitem(last=False)
                 return body
         except urllib.error.HTTPError as error:
             if error.code == 429:
@@ -92,7 +121,7 @@ class Client:
     def ids(self):
         if not self.cfg.get('list_verified') or not self.cfg.get('list_path'):
             raise RuntimeError('Automatic discovery is not configured. Verify the list endpoint and pagination first; see README.md.')
-        body = self.get(self.cfg['list_path'])
+        body = self.get(self.cfg['list_path'], fresh=True)
         ids = parse_ids(body)
         for item in ET.fromstring(body).findall('consignment'):
             self.references[shipment_id(item.findtext('id') or item.get('id'))] = item.findtext('consignor-reference', '')
