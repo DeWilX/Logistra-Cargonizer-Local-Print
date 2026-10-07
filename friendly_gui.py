@@ -198,9 +198,7 @@ class FriendlyApp(App):
         updates = ttk.LabelFrame(preferences, text='Atjauninājumi', padding=12)
         updates.pack(fill='x', pady=(16, 0))
         ttk.Label(updates, text='Versija: ' + VERSION).pack(anchor='w')
-        ttk.Label(updates, text='GitHub repozitorijs (owner/repo):').pack(anchor='w', pady=(8, 4))
-        self.update_repository = tk.StringVar(value=cfg.get('update_repository') or UPDATE_REPOSITORY)
-        ttk.Entry(updates, textvariable=self.update_repository).pack(fill='x')
+        ttk.Label(updates, text='Izstrādātājs: Gustavs Meijers').pack(anchor='w', pady=(8, 4))
         self.check_updates_on_start = tk.BooleanVar(value=cfg.get('check_updates_on_start', True))
         ttk.Checkbutton(updates, text='Pārbaudīt atjauninājumus palaižot', variable=self.check_updates_on_start,
                         command=self.save_update_preferences).pack(anchor='w', pady=(8, 0))
@@ -208,7 +206,7 @@ class FriendlyApp(App):
         update_actions.pack(anchor='w', pady=(8, 0))
         self.button(update_actions, 'Pārbaudīt atjauninājumus', self.check_updates)
         self.button(update_actions, 'Lejupielādēt un atjaunināt', self.install_update)
-        self.update_status = tk.StringVar(value='Atjauninājumi no publiska GitHub repozitorija. Iestatījumi saglabājas.')
+        self.update_status = tk.StringVar(value='Pārbaudi, vai pieejama jaunāka versija. Iestatījumi saglabājas.')
         ttk.Label(updates, textvariable=self.update_status, wraplength=730).pack(anchor='w', pady=(8, 0))
         self.pending_update = None
         ttk.Label(preferences, text='PDF saglabāšanas mape:').pack(anchor='w', pady=(16, 4))
@@ -264,20 +262,16 @@ class FriendlyApp(App):
         self.refresh_jobs()
 
     def snapshot(self):
-        from updater import repository_name
         values = super().snapshot()
-        repository = self.update_repository.get().strip()
-        values.update(update_repository=repository_name(repository) if repository else '',
+        values.update(update_repository='',
                       check_updates_on_start=self.check_updates_on_start.get())
         return values
 
     def save_update_preferences(self):
         from updater import repository_name
-        value = self.update_repository.get().strip()
         try:
-            repository = repository_name(value) if value else ''
-            write_config({'update_repository': repository, 'check_updates_on_start': self.check_updates_on_start.get()})
-            self.update_repository.set(repository)
+            repository = repository_name(UPDATE_REPOSITORY)
+            write_config({'update_repository': '', 'check_updates_on_start': self.check_updates_on_start.get()})
             return repository
         except Exception as error:
             self.update_status.set('Kļūda: ' + str(error))
@@ -286,7 +280,7 @@ class FriendlyApp(App):
     def check_updates_on_open(self):
         if self.closing or '--self-test' in sys.argv:
             return
-        if not self.check_updates_on_start.get() or not self.update_repository.get().strip():
+        if not self.check_updates_on_start.get() or not UPDATE_REPOSITORY:
             return
         if self.task_busy:
             self.root.after(1000, self.check_updates_on_open)
@@ -298,9 +292,9 @@ class FriendlyApp(App):
         repository = self.save_update_preferences()
         if not repository:
             if repository == '' and not automatic:
-                self.update_status.set('Norādi GitHub repozitoriju.')
+                self.update_status.set('Atjauninājumu avots nav pieejams.')
             return
-        self.update_status.set('Pārbauda GitHub Releases…')
+        self.update_status.set('Pārbauda atjauninājumus…')
         def action():
             try:
                 return check_release(repository), None
@@ -329,7 +323,7 @@ class FriendlyApp(App):
             return
         from updater import download_release, launch_replacement, repository_name
         try:
-            if repository_name(self.update_repository.get()) != self.pending_update['repository']:
+            if repository_name(UPDATE_REPOSITORY) != self.pending_update['repository']:
                 self.pending_update = None
                 self.check_updates(install=True)
                 return

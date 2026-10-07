@@ -184,13 +184,13 @@ Printeris saglabāts. Ja fona skripts jau darbojas, restartē to, lai lietotu ja
 Saglabā testa PDF…|Saving test PDF…|Lagrer test-PDF…
 Atjauninājumi|Updates|Oppdateringer
 Versija: |Version: |Versjon:
-GitHub repozitorijs (owner/repo):|GitHub repository (owner/repo):|GitHub-repositorium (owner/repo):
+Izstrādātājs: Gustavs Meijers|Developer: Gustavs Meijers|Utvikler: Gustavs Meijers
 Pārbaudīt atjauninājumus palaižot|Check for updates on launch|Se etter oppdateringer ved oppstart
 Pārbaudīt atjauninājumus|Check for updates|Se etter oppdateringer
 Lejupielādēt un atjaunināt|Download and update|Last ned og oppdater
-Atjauninājumi no publiska GitHub repozitorija. Iestatījumi saglabājas.|Updates from a public GitHub repository. Your settings are preserved.|Oppdateringer fra et offentlig GitHub-repositorium. Innstillingene beholdes.
-Norādi GitHub repozitoriju.|Enter the GitHub repository.|Angi GitHub-repositoriet.
-Pārbauda GitHub Releases…|Checking GitHub Releases…|Kontrollerer GitHub Releases…
+Pārbaudi, vai pieejama jaunāka versija. Iestatījumi saglabājas.|Check whether a newer version is available. Your settings are preserved.|Se om en nyere versjon er tilgjengelig. Innstillingene beholdes.
+Atjauninājumu avots nav pieejams.|Update source is unavailable.|Oppdateringskilden er utilgjengelig.
+Pārbauda atjauninājumus…|Checking for updates…|Ser etter oppdateringer…
 Atjauninājumu pārbaude neizdevās: |Update check failed: |Kontroll av oppdateringer mislyktes:
 Pieejama jauna versija: |New version available: |Ny versjon tilgjengelig:
 Jau lieto jaunāko versiju.|You are using the latest version.|Du bruker den nyeste versjonen.
