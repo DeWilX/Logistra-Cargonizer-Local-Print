@@ -1,0 +1,19 @@
+{
+  "sender_id": "",
+  "printer": "",
+  "print_backend": "adobe",
+  "adobe_path": "",
+  "sumatra_path": "",
+  "print_settings": "noscale,simplex,1x,ignore-pdf-print-settings",
+  "poll_seconds": 15,
+  "pdf_directory": "",
+  "close_to_tray": true,
+  "theme": "system",
+  "language": "lv",
+  "list_path": "/consignments.xml",
+  "list_verified": false,
+  "auto_print": false,
+  "autostart": false,
+  "update_repository": "",
+  "check_updates_on_start": true
+}

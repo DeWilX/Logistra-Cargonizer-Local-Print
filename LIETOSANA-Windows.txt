@@ -1,0 +1,47 @@
+LOGISTRA PRINT — WINDOWS
+
+1. Pārvieto Logistra-Print.exe uz pastāvīgu, rakstāmu mapi un atver to.
+   Python atsevišķi nav jāinstalē.
+2. Iestatījumos ievadi savu Cargonizer Sender ID un API atslēgu.
+   Saglabā un pārbaudi. Tukšs atslēgas lauks saglabā esošo atslēgu.
+3. Printeris un PDF sadaļā izvēlies instalētu printeri un saglabā to.
+   Izdrukāt PDF izmanto iekļauto 102 x 192 mm testa etiķeti.
+   Adobe drukāšanai izmanto Actual size / 100% un vienu kopiju.
+4. Sūtījumi ielādējas atverot programmu, ja API atslēga ir saglabāta.
+   Izvēlies periodu vai datumus kalendārā. Pēc manuālas datuma maiņas
+   nospied Filtrēt. Ctrl/Shift ļauj atlasīt vairākus sūtījumus.
+5. Sākumā var meklēt pēc sūtījuma ID vai pilna ref. / order numura.
+   PDF nosaukumā ir ID un reference; Atvērt PDF mapi atver saglabāto mapi.
+6. Automātiku ieslēdz atsevišķi. Pirmajā reizē esošie sūtījumi tiek
+   atzīmēti kā sākuma saraksts. Neskaidra druka netiek automātiski atkārtota.
+
+Microsoft Print to PDF saglabā oriģinālā PDF kopiju izvēlētajā mapē.
+Tā nav fiziska printera pārbaude. Komandas pieņemšana nav fiziskas drukas
+apstiprinājums. Pirms pādrukas pārbaudi printera rindu.
+
+Iestatījumos var izvēlēties PDF mapi, sistēmas/gaišo/tumšo tēmu un valodu:
+Latviešu, English vai Norsk bokmål. Valoda mainās uzreiz.
+Minimālais pārbaudes intervāls ir 5 sekundes. API limita kļūda ieslēdz pauzi.
+Apstiprināt manuāli tikai paslēpj pirmās iestatīšanas bloku.
+Zaļie/sarkanie punkti rāda faktiskos pārbaudes rezultātus.
+Neatrasts saglabātais printeris rāda nav iestatīts.
+
+SYSTEM TRAY UN WINDOWS STARTS
+Tray ikona paliek redzama visu lietotnes darbības laiku.
+Aizverot logu, turpināt system tray nosaka X darbību. Lai pilnīgi izietu,
+tray izvēlnē izvēlies Aizvērt. Otru programmas instanci palaist nevar.
+Windows autostart veido Logistra Print saīsni ar ikonu un paslēptu logu.
+Pēc EXE pārvietošanas saglabā autostart iestatījumus vēlreiz.
+
+ATJAUNINĀJUMI
+GitHub release versijā repozitorijs ir iekļauts; lokālā būvē ievadi publiska
+repozitorija owner/repo iestatījumos. Pārbaudīt atjauninājumus atrod jaunāko
+GitHub Release. Lejupielādēt un atjaunināt pārbauda EXE SHA-256, sagaida
+pašreizējo darbu pabeigšanu, saglabā vecā EXE kopiju un pārstartē lietotni.
+EXE mapei jābūt rakstāmai. Kļūdu žurnāls ir lietotāja updates/update.log.
+Ja repozitorijs vai pirmais laidiena EXE vēl nav publicēts, atjaunināšana
+vēl nav pieejama. Atjaunināšana šobrīd atbalsta publiskus repozitorijus.
+
+Konts, API atslēga un drukas vēsture glabājas %LOCALAPPDATA%\Logistra.
+Atjaunināšana šos failus nemaina. DPAPI atslēga pieder konkrētajam Windows
+lietotājam un datoram. EXE nav parakstīts ar izdevēja sertifikātu.
