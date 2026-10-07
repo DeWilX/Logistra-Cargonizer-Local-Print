@@ -1,23 +1,20 @@
-# Logistra macOS
+# Logistra Print macOS
 
-Šī ir tā paša Logistra GUI macOS versija: API iestatījumi, printeru saraksts, PDF lejupielāde, testa druka, pādruka, sūtījumu uzskaite un fona pārbaudes.
+GitHub Releases piedāvā gatavu lietotni abiem Mac procesoru veidiem:
 
-Izvēlies savu instalēto printeri. Draiveris un drukas formāts jāpārbauda konkrētajā Mac datorā.
+- Apple Silicon (M1 un jaunāki): `Logistra-macOS-arm64.zip`.
+- Intel: `Logistra-macOS-x86_64.zip`.
 
-1. Instalē [Python 3.10+ no python.org](https://www.python.org/downloads/macos/) ar Tkinter. Adobe Reader vai SumatraPDF macOS versijai nav nepieciešams.
-2. Atarhivē mapi stabilā vietā, piemēram, Documents/Logistra. Atver `Open-Logistra.command`. Ja Finder neļauj to palaist, Terminal šajā mapē izpildi `chmod +x Open-Logistra.command`, tad `./Open-Logistra.command`. Alternatīvi: `python3 logistra_gui.py`.
-3. Cilnē **Iestatījumi** ievadi savu Sender ID un API atslēgu, saglabā un pārbaudi pieslēgumu. Atslēga glabājas macOS login Keychain, nevis konfigurācijā vai žurnālā. macOS var prasīt atļaut Python piekļuvi šim Keychain ierakstam. Windows DPAPI failu uz Mac pārnest nevar.
-4. Cilnē **Printeris un pādruka** izvēlies macOS instalēto printeri un saglabā. Printeri jāpievieno System Settings → Printers & Scanners. Lietotne rāda CUPS rindas nosaukumus; neinstalētus printerus tā nemeklē tīklā.
-5. Nospied **Izdrukāt PDF**, lai drukātu iekļauto **102 × 192 mm** testa etiķeti. Papīra izmēru iestati printera draiverī. Druka izmanto macOS `lp`, vienu kopiju un `print-scaling=none`; faktiskais draivera rezultāts jāpārbauda fiziski. Sekmīga nosūtīšana rindai nenozīmē, ka printeris jau izdrukājis.
+Izpako atbilstošo ZIP un pārvieto `Logistra.app` uz Applications. Python ir iekļauts. Lietotne pašlaik nav parakstīta ar Apple Developer sertifikātu vai notarizēta; macOS var prasīt atļauju to atvērt System Settings → Privacy & Security.
 
-Jaunu sūtījumu meklēšanas pārbaude joprojām nepieciešama ar reālu jaunu `open` sūtījumu. Automātika noklusējumā izslēgta. Pēc saraksta pārbaudes un testa drukas: apstiprini saraksta pārbaudi, saglabā, saglabā sākuma atskaiti, izvēlies automātisko druku, saglabā un palaid. Daudzlapu sarakstu apstrāde vēl nav ieviesta.
+Iestatījumos ievadi savu Sender ID un API atslēgu, saglabā un pārbaudi pieslēgumu. Nav iepriekš aizpildīta konta vai printera. Atslēga glabājas macOS login Keychain, nevis konfigurācijā vai žurnālā. Windows DPAPI failu uz Mac pārnest nevar.
 
-Minimizēts logs turpina strādāt fonā. Aizverot logu, automātika apstājas pēc pašreizējās darbības pabeigšanas. Mac datoram jābūt ieslēgtam un nedrīkst gulēt. Automātiska palaišana pēc pieteikšanās saglabā lietotāja `~/Library/LaunchAgents/app.logistra.print.plist`; tā stājas spēkā nākamajā pieteikšanās reizē. Noņemot šo izvēli un saglabājot, fails tiek dzēsts. Ja aģents jau ielādēts pašreizējā sesijā, to izkrauj ar `launchctl bootout gui/$(id -u)/app.logistra.print` vai izraksties un piesakies vēlreiz. Lietotnes mapi pēc autostart iestatīšanas nepārvieto; ja pārvieto, iestatījumu saglabā vēlreiz.
+Izvēlies printeri, kas pievienots System Settings → Printers & Scanners. Lietotne izmanto CUPS rindas un `lp`, vienu kopiju un `print-scaling=none`. Poga Izdrukāt PDF nosūta iekļauto 102 × 192 mm testa etiķeti; pirms drukāšanas pārbaudi draivera papīra izmēru. Sekmīga nosūtīšana rindai nenozīmē, ka etiķete fiziski izdrukāta.
 
-Pādrukai izvēlies saglabātu sūtījuma ID vai ievadi ID manuāli. Lokāli saglabāta etiķete neprasa API piekļuvi. Pādruka ir viena papildu kopija un nemaina automātiskās drukas uzskaiti. Pirms tās pārbaudi printera rindu.
+Iestatījumi, žurnāls un SQLite uzskaite glabājas `~/Library/Application Support/Logistra`. PDF mapi var izvēlēties iestatījumos. Lietotnes aizstāšana ar jaunāku versiju saglabā šos datus. Vienam Sender ID automātisko druku vienlaikus darbini vienā datorā.
 
-Žurnāls: `data/gui.log`. Atslēga nav žurnālā. PDF un apstrādes SQLite datubāze glabājas programmas `data` mapē. Dažādiem datoriem ir atsevišķa uzskaite: vienam Sender ID automātiku vienlaikus darbini tikai vienā datorā, citādi abi var izdrukāt to pašu etiķeti.
+Minimizēts logs turpina darbu fonā. Mac datoram jābūt ieslēgtam un nedrīkst gulēt. Automātiska palaišana izmanto `~/Library/LaunchAgents/app.logistra.print.plist`. Windows system tray un automātiska EXE aizstāšana ir Windows funkcijas; Mac atjauninājumam lejupielādē atbilstošo ZIP un aizstāj lietotni.
 
-Lokālie testi pārbauda CUPS komandu, saraksta parsēšanu, Keychain saglabāšanas izsaukumu un LaunchAgent konfigurāciju. Reāla Keychain piekļuve, GUI, palaišana pēc pieteikšanās un fiziskā printera druka vēl jātestē lietotāja Mac datorā.
+GitHub būvē un pārbauda Apple Silicon un Intel versijas atsevišķi, tostarp palaiž gatavās lietotnes pašpārbaudi un pārbauda arhīva noklusējuma iestatījumus. Reāla Keychain piekļuve, printera druka un palaišana pēc pieteikšanās vēl jāpārbauda lietotāja Mac datorā.
 
-Avoti: [CUPS drukas komandas](https://www.cups.org/doc/options.html), [Python GUI uz macOS](https://docs.python.org/3/using/mac.html), [Apple Keychain](https://developer.apple.com/documentation/security/keychain-items), [Apple LaunchAgents](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html).
+Palaišanai no pirmkoda instalē Python 3.12 ar Tkinter, atkarības no `requirements-build.txt` un palaid `python3 logistra_gui.py`. Būvēšanai palaid `python3 build_app.py`.

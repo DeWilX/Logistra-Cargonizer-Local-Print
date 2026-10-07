@@ -36,7 +36,7 @@ The output is `dist/Logistra-Print.exe` and `dist/Logistra-Windows-exe.zip`. Bui
 
 ## GitHub build and release
 
-Pushes to `main`/`master` and pull requests run tests and create downloadable build artifacts. Push a version tag such as `v0.1.1` to build and publish a Windows EXE and ZIP in GitHub Releases. The tag must be `vX.Y.Z`; each update requires a higher version. The release job uses the repository's built-in `GITHUB_TOKEN` with contents-write permission. No Cargonizer credentials belong in repository secrets.
+Pushes to `main`/`master` and pull requests run tests and create downloadable Windows and macOS build artifacts. Push a version tag such as `v0.1.2` to build and publish a Windows EXE/ZIP and macOS ZIPs for Apple Silicon (`arm64`) and Intel (`x86_64`) in GitHub Releases. Publication waits until all three builds and packaged application checks pass. The tag must be `vX.Y.Z`; each update requires a higher version. The release job uses the repository's built-in `GITHUB_TOKEN` with contents-write permission. No Cargonizer credentials belong in repository secrets.
 
 Release builds embed the actual repository name and version. In a locally built EXE, enter `owner/repo` in Settings → Updates. Automatic checking runs on launch and offers a download/update action. The current implementation uses public repositories. Installation waits for active work, keeps an EXE backup and restarts the app; the EXE folder must be writable. Download or replacement failures leave the current EXE in place; replacement diagnostics are in `%LOCALAPPDATA%\Logistra\updates\update.log`.
 
@@ -46,4 +46,4 @@ Updates use [GitHub's latest release API](https://docs.github.com/en/rest/releas
 
 Run `Open-Logistra.cmd` for the Python GUI. The local `config.json` is created from the generic defaults and is ignored by Git. Do not commit user data. Interactive tray tests are skipped in GitHub Actions; the Windows release job also runs the packaged EXE self-test.
 
-macOS builds remain available through the build workflow. Automatic EXE replacement is Windows-only. See [README-macOS.md](README-macOS.md) and [LIETOSANA-Windows.txt](LIETOSANA-Windows.txt).
+macOS builds are available in GitHub Releases and include Python. Automatic EXE replacement is Windows-only. See [README-macOS.md](README-macOS.md) and [LIETOSANA-Windows.txt](LIETOSANA-Windows.txt).
