@@ -20,7 +20,7 @@ Lietotne pašlaik nav parakstīta ar Apple Developer ID sertifikātu vai notariz
 
 ## Atjaunināšana
 
-Aizver veco Logistra kopiju, lejupielādē savam procesoram paredzēto jaunāko ZIP un aizstāj `Logistra.app` mapē Applications. Atver tieši šo kopiju un iestatījumos pārbaudi versijas numuru. Iestatījumi un drukāšanas vēsture saglabājas. Versijā 0.1.4 ir labota atjauninājumu pārbaudes SSL sertifikātu kļūda; repozitorija ievades lauks ir noņemts.
+Aizver veco Logistra kopiju, lejupielādē savam procesoram paredzēto jaunāko ZIP un aizstāj `Logistra.app` mapē Applications. Atver tieši šo kopiju un iestatījumos pārbaudi versijas numuru. Iestatījumi un drukāšanas vēsture saglabājas. Versijā 0.1.5 ir labota atjauninājumu pārbaudes SSL sertifikātu kļūda un pievienota rezerves pārbaude GitHub API limita gadījumā; repozitorija ievades lauks ir noņemts.
 
 ## Iestatīšana
 

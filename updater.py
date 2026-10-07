@@ -1,6 +1,7 @@
 """Verified public GitHub release downloads and a Windows replacement helper."""
 import base64
 import hashlib
+from html.parser import HTMLParser
 import json
 import os
 from pathlib import Path
@@ -70,6 +71,63 @@ def github_opener():
     return urllib.request.build_opener(GitHubRedirect(), urllib.request.HTTPSHandler(context=verified_context()))
 
 
+class ReleaseAssetParser(HTMLParser):
+    """Read the digest and download link belonging to the same release asset row."""
+    def __init__(self, expected):
+        super().__init__()
+        self.expected = expected
+        self.row = None
+        self.assets = []
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag == 'li':
+            self.row = {}
+        elif self.row is not None:
+            if tag == 'a' and attrs.get('href') == self.expected:
+                self.row['url'] = 'https://github.com' + self.expected
+            if tag == 'clipboard-copy' and attrs.get('aria-label') == 'Copy to clipboard digest for Logistra-Print.exe':
+                self.row['digest'] = attrs.get('value', '')
+
+    def handle_endtag(self, tag):
+        if tag == 'li' and self.row is not None:
+            if 'url' in self.row:
+                self.assets.append(self.row)
+            self.row = None
+
+
+def check_release_page(repository, current=VERSION, opener=None):
+    """Official release page fallback when GitHub's public API is rate limited."""
+    repository = repository_name(repository)
+    opener = opener or github_opener()
+    headers = {'User-Agent': 'Logistra-Print/' + current}
+    with opener.open(urllib.request.Request(f'https://github.com/{repository}/releases/latest', headers=headers), timeout=30) as response:
+        latest = urllib.parse.urlsplit(response.geturl())
+    prefix = '/' + repository + '/releases/tag/'
+    if latest.scheme != 'https' or latest.netloc != 'github.com' or not latest.path.startswith(prefix) or latest.query or latest.fragment:
+        raise ValueError('Atjauninājuma saite neatbilst izvēlētajam GitHub repozitorijam.')
+    tag = latest.path[len(prefix):]
+    if version_tuple(tag) <= version_tuple(current):
+        return None
+    with opener.open(urllib.request.Request(f'https://github.com/{repository}/releases/expanded_assets/{tag}', headers=headers), timeout=30) as response:
+        body = response.read(1024 * 1024 + 1)
+    if len(body) > 1024 * 1024:
+        raise ValueError('GitHub atbilde ir pārāk liela.')
+    expected = '/' + repository + '/releases/download/' + tag + '/Logistra-Print.exe'
+    parser = ReleaseAssetParser(expected)
+    parser.feed(body.decode('utf-8'))
+    if len(parser.assets) != 1:
+        raise ValueError('GitHub laidienā nav gatava Windows EXE.')
+    asset = parser.assets[0]
+    # Validate the digest before requesting the executable's size.
+    if not re.fullmatch(r'sha256:[0-9a-fA-F]{64}', asset.get('digest', '')):
+        raise ValueError('GitHub laidienam nav SHA-256 pārbaudes vērtības.')
+    with opener.open(urllib.request.Request(asset['url'], headers=headers, method='HEAD'), timeout=30) as response:
+        size = int(response.headers.get('Content-Length', '0'))
+    return validate_release({'tag_name': tag, 'assets': [{'name': 'Logistra-Print.exe', 'state': 'uploaded',
+        'browser_download_url': asset['url'], 'digest': asset['digest'], 'size': size}]}, repository, current)
+
+
 def check_release(repository, current=VERSION):
     repository = repository_name(repository)
     request = urllib.request.Request(f'https://api.github.com/repos/{repository}/releases/latest',
@@ -80,6 +138,8 @@ def check_release(repository, current=VERSION):
         with github_opener().open(request, timeout=30) as response:
             body = response.read(1024 * 1024 + 1)
     except urllib.error.HTTPError as error:
+        if error.code == 429 or error.code == 403 and (error.headers.get('X-RateLimit-Remaining') == '0' or error.headers.get('Retry-After')):
+            return check_release_page(repository, current)
         if error.code == 404:
             raise ValueError('GitHub laidieni vēl nav publicēti vai repozitorijs nav publisks.') from None
         raise ValueError(f'GitHub HTTP {error.code}.') from None

@@ -7,7 +7,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 import updater
 
 
@@ -37,6 +37,38 @@ class UpdaterTests(unittest.TestCase):
         payload = self.payload()
         payload['prerelease'] = True
         self.assertIsNone(updater.validate_release(payload, self.repository))
+
+    def page_response(self, body=b'', url='https://github.com/example/logistra/releases/tag/v1.2.0', headers=None):
+        response = io.BytesIO(body)
+        response.geturl = lambda: url
+        response.headers = headers or {}
+        return response
+
+    def test_api_rate_limit_uses_official_release_page(self):
+        error = updater.urllib.error.HTTPError('https://api.github.com', 403, 'rate limited', {'X-RateLimit-Remaining': '0'}, None)
+        opener = Mock()
+        opener.open.side_effect = error
+        with patch.object(updater, 'github_opener', return_value=opener), patch.object(updater, 'check_release_page', return_value={'version': '1.2.0'}) as fallback:
+            self.assertEqual(updater.check_release(self.repository, '1.0.0'), {'version': '1.2.0'})
+            fallback.assert_called_once_with(self.repository, '1.0.0')
+
+    def test_release_page_digest_and_size_pass_same_validation(self):
+        asset = self.payload()['assets'][0]
+        html = f'<li><a href="/example/logistra/releases/download/v1.2.0/Logistra-Print.exe">EXE</a><clipboard-copy aria-label="Copy to clipboard digest for Logistra-Print.exe" value="{asset["digest"]}"></clipboard-copy></li>'
+        opener = Mock()
+        opener.open.side_effect = [self.page_response(), self.page_response(html.encode()), self.page_response(headers={'Content-Length': str(len(self.body))})]
+        self.assertEqual(updater.check_release_page(self.repository, '1.0.0', opener), updater.validate_release(self.payload(), self.repository, '1.0.0'))
+        self.assertEqual(opener.open.call_args.args[0].get_method(), 'HEAD')
+
+    def test_release_page_wrong_repository_and_missing_digest_are_rejected(self):
+        opener = Mock()
+        opener.open.return_value = self.page_response(url='https://github.com/other/repo/releases/tag/v1.2.0')
+        with self.assertRaises(ValueError):
+            updater.check_release_page(self.repository, '1.0.0', opener)
+        html = '<li><a href="/example/logistra/releases/download/v1.2.0/Logistra-Print.exe">EXE</a></li>'
+        opener.open.side_effect = [self.page_response(), self.page_response(html.encode())]
+        with self.assertRaisesRegex(ValueError, 'SHA-256'):
+            updater.check_release_page(self.repository, '1.0.0', opener)
 
     def test_wrong_repository_missing_digest_and_oversized_asset_are_rejected(self):
         for field, value in [('digest', ''), ('size', updater.MAX_EXE_SIZE+1),

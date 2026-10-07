@@ -42,7 +42,7 @@ Pushes to `main`/`master` and pull requests run tests and create downloadable Wi
 
 Release builds embed the actual repository name and version. Settings → Updates shows the version, developer and update buttons; the update repository is configured by the build and does not require user input. Automatic checking runs on launch and offers a download/update action. The current implementation uses public repositories. Installation waits for active work, keeps an EXE backup and restarts the app; the EXE folder must be writable. Download or replacement failures leave the current EXE in place; replacement diagnostics are in `%LOCALAPPDATA%\Logistra\updates\update.log`.
 
-Updates use [GitHub's latest release API](https://docs.github.com/en/rest/releases/releases#get-the-latest-release) and the [release asset SHA-256 digest](https://docs.github.com/en/rest/releases/assets#get-a-release-asset). Older releases without a digest cannot be installed automatically.
+Updates use [GitHub's latest release API](https://docs.github.com/en/rest/releases/releases#get-the-latest-release) and the [release asset SHA-256 digest](https://docs.github.com/en/rest/releases/assets#get-a-release-asset). If the public API is rate limited, the app checks the official GitHub release page and its published asset digest instead. Both paths enforce the same repository, version, size and SHA-256 checks. Older releases without a digest cannot be installed automatically.
 
 ## Development notes
 
