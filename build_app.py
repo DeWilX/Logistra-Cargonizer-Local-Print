@@ -9,12 +9,12 @@ import os
 import re
 import sys
 from zipfile import ZipFile, ZIP_DEFLATED
-from version import UPDATE_REPOSITORY
+from version import VERSION, UPDATE_REPOSITORY
 
 root = Path(__file__).resolve().parent
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--dist-dir', type=Path, default=root / 'dist')
-parser.add_argument('--version', default='0.1.0')
+parser.add_argument('--version', default=VERSION)
 parser.add_argument('--repository', default=os.environ.get('GITHUB_REPOSITORY') or UPDATE_REPOSITORY)
 args = parser.parse_args()
 if not re.fullmatch(r'\d+\.\d+\.\d+', args.version):

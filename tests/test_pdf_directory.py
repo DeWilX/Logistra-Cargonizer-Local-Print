@@ -43,7 +43,7 @@ class PdfDirectoryTests(unittest.TestCase):
         history = self.root / 'data/state.sqlite'
         history.write_bytes(b'history sentinel')
         with patch.object(printer, 'ROOT', self.root):
-            self.assertEqual(printer.prepare_pdf_directory({}, self.destination), str(self.destination))
+            self.assertEqual(printer.prepare_pdf_directory({}, self.destination), str(self.destination.resolve()))
         self.assertEqual(source.read_bytes(), self.body)
         self.assertEqual((self.destination / source.name).read_bytes(), self.body)
         self.assertEqual(history.read_bytes(), b'history sentinel')
