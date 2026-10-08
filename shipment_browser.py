@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 from urllib.parse import urlencode
 
 from logistra import Client, shipment_id
-from ui_theme import asset, theme_color
+from ui_theme import asset, theme_color, AutoScrollbar
 from localization import translate
 from tooltips import Tooltip
 
@@ -226,8 +226,11 @@ class ShipmentBrowser:
         self.filter_tooltip = Tooltip((help_label,), help_text)
         footer = ttk.Frame(parent)
         footer.pack(side='bottom', fill='x', pady=(4, 0))
-        notice_label = ttk.Label(footer, textvariable=self.notice, wraplength=1000)
-        notice_label.pack(anchor='w')
+        from tkinter import font as tkfont
+        footer.configure(height=tkfont.Font(parent, font=ttk.Style(parent).lookup('TLabel', 'font')).metrics('linespace') * 2 + 4)
+        footer.pack_propagate(False)
+        notice_label = ttk.Label(footer, textvariable=self.notice, wraplength=1000, width=1, anchor='nw')
+        notice_label.pack(fill='both', expand=True)
         footer.bind('<Configure>', lambda event: notice_label.configure(wraplength=max(200, event.width)))
         grid = ttk.Frame(parent)
         grid.pack(fill='both', expand=True)
@@ -243,8 +246,8 @@ class ShipmentBrowser:
             self.table.heading(name, text=label)
             self.table.column(name, width=width, minwidth=width, stretch=False, anchor='center' if name in ('pdf', 'print', 'items', 'date') else 'w')
         self.table.grid(row=0, column=0, sticky='nsew')
-        horizontal = ttk.Scrollbar(grid, orient='horizontal', command=self.table.xview)
-        vertical = ttk.Scrollbar(grid, orient='vertical', command=self.table.yview)
+        horizontal = AutoScrollbar(grid, orient='horizontal', command=self.table.xview)
+        vertical = AutoScrollbar(grid, orient='vertical', command=self.table.yview)
         horizontal.grid(row=1, column=0, sticky='ew')
         vertical.grid(row=0, column=1, sticky='ns')
         self.table.configure(xscrollcommand=horizontal.set, yscrollcommand=vertical.set)
@@ -381,7 +384,12 @@ class ShipmentBrowser:
             self.notice.set(self.filter_info.get())
             return
         self.valid_dates.update({str(value): value.get() for _, value in self.date_entries})
-        self.table.delete(*self.table.get_children())
+        previous_selection = self.table.selection()
+        previous_y = self.table.yview()[0]
+        wanted = {row['id'] for row in rows}
+        for identifier in self.table.get_children():
+            if identifier not in wanted:
+                self.table.delete(identifier)
         states = {'open': translate(self.table, 'Atvērts'), 'transferred': translate(self.table, 'Nosūtīts')}
         def insert_batch(start_index=0):
             self.render_after = None
@@ -392,9 +400,18 @@ class ShipmentBrowser:
                     display_date = datetime.fromisoformat(row['created'].replace('Z', '+00:00')).astimezone().strftime('%d.%m.%Y')
                 except ValueError:
                     display_date = '—'
-                self.table.insert('', 'end', iid=row['id'], image=self.action_image, values=(row['recipient'], row['address'], row['carrier'], row['product'], row['reference'], row['items'], display_date, row['number'], states.get(row['state'], row['state'])), tags=('even' if index % 2 == 0 else 'odd',))
+                values = (row['recipient'], row['address'], row['carrier'], row['product'], row['reference'], row['items'], display_date, row['number'], states.get(row['state'], row['state']))
+                tags = ('even' if index % 2 == 0 else 'odd',)
+                if self.table.exists(row['id']):
+                    self.table.item(row['id'], values=values, tags=tags)
+                    self.table.move(row['id'], '', index)
+                else:
+                    self.table.insert('', index, iid=row['id'], image=self.action_image, values=values, tags=tags)
             if end_index < len(rows):
                 self.render_after = self.table.after(1, lambda: insert_batch(end_index))
+            else:
+                self.table.selection_set([identifier for identifier in previous_selection if identifier in wanted])
+                self.table.yview_moveto(previous_y)
         insert_batch()
         self.notice.set(f'Rāda {len(rows)} no {len(self.rows)} ielādētajiem sūtījumiem. Izvēlies sūtījumu, lai lejupielādētu vai pādrukātu etiķeti.')
         dates = []

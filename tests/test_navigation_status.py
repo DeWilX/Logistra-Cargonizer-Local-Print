@@ -42,6 +42,25 @@ class NavigationStatusTests(unittest.TestCase):
             sections[0].resize()
             configure.assert_not_called()
 
+    def test_scrollbar_visibility_tracks_overflow_without_moving_content(self):
+        ui_theme.apply_theme(self.root, dark=True)
+        section = ScrollableSection(self.root)
+        section.pack(fill='both', expand=True)
+        content = ttk.Frame(section.body, height=40)
+        content.pack(fill='x')
+        self.root.update()
+        width = section.canvas.winfo_width()
+        self.assertTrue(section.scrollbar.instate(['disabled']))
+        content.configure(height=1000)
+        self.root.update()
+        self.assertFalse(section.scrollbar.instate(['disabled']))
+        self.assertEqual(section.canvas.winfo_width(), width)
+        ui_theme.apply_theme(self.root, dark=False)
+        content.configure(height=40)
+        self.root.update()
+        self.assertTrue(section.scrollbar.instate(['disabled']))
+        self.assertEqual(section.canvas.winfo_width(), width)
+
     def test_slow_macos_theme_detection_does_not_block_navigation(self):
         started, release, finished = threading.Event(), threading.Event(), threading.Event()
         def slow_detection():
@@ -117,3 +136,14 @@ class NavigationStatusTests(unittest.TestCase):
             self.root.update()
         self.assertLess(ticks[0], 500)
         self.assertEqual(len(browser.table.get_children()), 500)
+        browser.table.selection_set('250')
+        browser.table.yview_moveto(0.4)
+        self.root.update_idletasks()
+        previous_y = browser.table.yview()[0]
+        browser.render()
+        self.assertEqual(len(browser.table.get_children()), 500)
+        deadline = time.monotonic() + 3
+        while browser.render_after is not None and time.monotonic() < deadline:
+            self.root.update()
+        self.assertEqual(browser.table.selection(), ('250',))
+        self.assertAlmostEqual(browser.table.yview()[0], previous_y, places=2)

@@ -13,7 +13,7 @@ import xml.etree.ElementTree as ET
 import logistra as engine
 from logistra_gui import App, ROOT, read_config, write_config, save_key, configure_startup
 from printer_setup import PrinterWindow, reprint_label, save_printer, label_file, save_pdf_copy, choose_pdf_destination, prepare_pdf_directory, saved_labels
-from ui_theme import apply_theme, asset, window_geometry, set_theme_mode
+from ui_theme import apply_theme, asset, window_geometry, set_theme_mode, AutoScrollbar
 from navigation import SectionNavigation, ScrollableSection
 from localization import LANGUAGES, Locale, install_widgets, translate
 from version import VERSION, UPDATE_REPOSITORY
@@ -183,11 +183,16 @@ class FriendlyApp(App):
         self.button(inputs, 'Pādrukāt etiķeti', self.quick_reprint)
         ttk.Button(inputs, text='Atvērt PDF mapi', command=self.open_folder).pack(side='left')
         ttk.Label(self.home, text='Pēdējie sūtījumi', style='Title.TLabel').pack(anchor='w', pady=(4, 8))
-        self.table = ttk.Treeview(self.home, columns=('id', 'status'), show='headings', height=6)
+        recent_grid = ttk.Frame(self.home)
+        recent_grid.pack(fill='both', expand=True)
+        self.table = ttk.Treeview(recent_grid, columns=('id', 'status'), show='headings', height=6)
         self.table.heading('id', text='Sūtījums')
         self.table.heading('status', text='Statuss')
         self.table.column('id', width=180, stretch=False)
-        self.table.pack(fill='both', expand=True)
+        recent_scroll = AutoScrollbar(recent_grid, orient='vertical', command=self.table.yview)
+        recent_scroll.pack(side='right', fill='y')
+        self.table.configure(yscrollcommand=recent_scroll.set)
+        self.table.pack(side='left', fill='both', expand=True)
         self.table.bind('<<TreeviewSelect>>', self.select_job)
         ttk.Label(self.home, text='Izvēlies sūtījumu un nospied “Pādrukāt etiķeti”. Pādruka ir viena papildu kopija.', wraplength=820).pack(anchor='w', pady=(8, 0))
         settings.columnconfigure(1, weight=1)
@@ -255,8 +260,17 @@ class FriendlyApp(App):
         self.button(self.advanced_row(settings), 'Saglabāt iestatījumus', self.save)
         ttk.Label(settings, text='Datoram jāpaliek ieslēgtam. Ja ieslēgta turpināšana system tray, loga aizvēršana neaptur automātiku.' if sys.platform == 'win32' else 'Datoram jāpaliek ieslēgtam. Minimizēts logs turpina darbu; aizvērts logs aptur automātiku.', wraplength=760).grid(row=9, column=0, columnspan=2, sticky='w', pady=18)
         self.logs = tk.Text(journal, wrap='word', state='disabled', font=('Courier', 11))
-        self.logs.pack(fill='both', expand=True)
-        ttk.Label(shell, textvariable=self.activity, wraplength=930).pack(anchor='w', pady=(12, 0))
+        log_scroll = AutoScrollbar(journal, orient='vertical', command=self.logs.yview)
+        log_scroll.pack(side='right', fill='y')
+        self.logs.configure(yscrollcommand=log_scroll.set)
+        self.logs.pack(side='left', fill='both', expand=True)
+        from tkinter import font as tkfont
+        activity_area = ttk.Frame(shell, height=tkfont.Font(root, font=style.lookup('TLabel', 'font')).metrics('linespace') * 2 + 4)
+        activity_area.pack(fill='x', pady=(8, 0))
+        activity_area.pack_propagate(False)
+        activity_label = ttk.Label(activity_area, textvariable=self.activity, width=1, anchor='nw', wraplength=930)
+        activity_label.pack(fill='both', expand=True)
+        activity_label.bind('<Configure>', lambda event: activity_label.configure(wraplength=max(200, event.width)))
         root.protocol('WM_DELETE_WINDOW', self.close)
         root.after(100, self.receive)
         root.after(500, self.update_dashboard)
@@ -420,7 +434,7 @@ class FriendlyApp(App):
         self.task(action, completed)
 
     def log(self, message):
-        super().log(translate(self.root, message))
+        super().log(translate(self.root, message), update_status=False)
         self.activity.set(str(message))
 
     def update_dashboard(self):

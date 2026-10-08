@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import sys
 
-VERSION = '0.1.14'
+VERSION = '0.1.15'
 UPDATE_REPOSITORY = 'DeWilX/Logistra-Cargonizer-Local-Print'
 metadata = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent)) / 'release-info.json'
 if metadata.is_file():

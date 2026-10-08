@@ -180,9 +180,10 @@ class App:
         button.pack(side='left', padx=(0, 8))
         self.buttons.append(button)
 
-    def log(self, message):
+    def log(self, message, update_status=True):
         line = datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '  ' + str(message)
-        self.status.set(str(message))
+        if update_status:
+            self.status.set(str(message))
         self.logs.configure(state='normal')
         self.logs.insert('end', line + '\n')
         self.logs.see('end')

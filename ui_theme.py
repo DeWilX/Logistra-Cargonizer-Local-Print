@@ -8,6 +8,13 @@ import tkinter as tk
 from tkinter import ttk
 
 
+class AutoScrollbar(ttk.Scrollbar):
+    """Keep the gutter stable, but hide the thumb when everything fits."""
+    def set(self, first, last):
+        self.state(['disabled'] if float(first) <= 0 and float(last) >= 1 else ['!disabled'])
+        super().set(first, last)
+
+
 def asset(name):
     return Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent)) / 'assets' / name
 
@@ -147,7 +154,32 @@ def apply_theme(root, dark=None):
                   foreground=[('disabled', c('#7a8799')), ('active', c('#243247'))],
                   indicatorbackground=[('disabled', c('#edf0f5')), ('active', c('#ffffff'))],
                   indicatorforeground=[('disabled', c('#7a8799')), ('active', c('#243247'))])
-    style.configure('TScrollbar', background=c('#e9eef6'), troughcolor=c('#f5f7fb'), arrowcolor=c('#243247'))
+    from PIL import Image, ImageDraw, ImageTk
+    scrollbar_images = getattr(root, '_logistra_scrollbar_images', {})
+    root._logistra_scrollbar_images = scrollbar_images
+    for orientation in ('Vertical', 'Horizontal'):
+        name = orientation + '.TScrollbar'
+        element = 'Logistra' + ('Dark' if dark else 'Light') + '.' + orientation + '.Scrollbar.thumb'
+        if element not in style.element_names():
+            images = []
+            size = (14, 28) if orientation == 'Vertical' else (28, 14)
+            for color in (c('#7a8799'), c('#155eef'), c('#52627a')):
+                # Render rounded end caps once; Tk stretches only the middle.
+                bitmap = Image.new('RGB', (size[0] * 3, size[1] * 3), c('#f5f7fb'))
+                ImageDraw.Draw(bitmap).rounded_rectangle((6, 6, (size[0]-2)*3-1, (size[1]-2)*3-1), radius=15, fill=color)
+                images.append(ImageTk.PhotoImage(bitmap.resize(size, Image.Resampling.LANCZOS), master=root))
+            scrollbar_images[element] = images
+            images.append(ImageTk.PhotoImage(Image.new('RGB', size, c('#f5f7fb')), master=root))
+            style.element_create(element, 'image', images[0], ('disabled', images[3]), ('pressed', images[1]), ('active', images[2]),
+                                 border=6, sticky='nswe')
+        style.layout(name, [(orientation + '.Scrollbar.trough', {'sticky': 'nswe', 'children': [
+            (element, {'sticky': 'nswe'})]})])
+        style.configure(name, width=12, arrowsize=12, borderwidth=0, relief='flat',
+                        background=c('#7a8799'), troughcolor=c('#f5f7fb'),
+                        bordercolor=c('#f5f7fb'), lightcolor=c('#7a8799'), darkcolor=c('#7a8799'))
+        style.map(name, background=[('pressed',c('#155eef')), ('active',c('#52627a'))],
+                  lightcolor=[('pressed',c('#155eef')), ('active',c('#52627a'))],
+                  darkcolor=[('pressed',c('#155eef')), ('active',c('#52627a'))])
     root.option_add('*Text.background', c('#ffffff'))
     root.option_add('*Text.foreground', c('#243247'))
     root.option_add('*Text.insertBackground', c('#243247'))

@@ -2,7 +2,7 @@
 import tkinter as tk
 from tkinter import ttk
 
-from ui_theme import theme_color
+from ui_theme import theme_color, AutoScrollbar
 
 
 class ScrollableSection(ttk.Frame):
@@ -10,7 +10,7 @@ class ScrollableSection(ttk.Frame):
     def __init__(self, parent, padding=0):
         super().__init__(parent)
         self.canvas = tk.Canvas(self, highlightthickness=0, borderwidth=0)
-        self.scrollbar = ttk.Scrollbar(self, orient='vertical', command=self.canvas.yview)
+        self.scrollbar = AutoScrollbar(self, orient='vertical', command=self.canvas.yview)
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
         self.canvas.pack(side='left', fill='both', expand=True)
         self.scrollbar.pack(side='right', fill='y')
@@ -30,7 +30,9 @@ class ScrollableSection(ttk.Frame):
         if size == self.content_size:
             return
         self.content_size = size
-        self.canvas.itemconfigure(self.content_id, width=size[0], height=size[1])
+        # Keep the embedded frame's natural height so changing content triggers
+        # Configure and updates scrollbar visibility without a window resize.
+        self.canvas.itemconfigure(self.content_id, width=size[0])
         self.canvas.configure(scrollregion=self.canvas.bbox('all'))
 
     def wheel(self, event):
