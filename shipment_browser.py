@@ -1,13 +1,14 @@
 """Browse live Cargonizer shipments using the two endpoints verified in-session."""
 from datetime import date, datetime, timedelta
 import tkinter as tk
-from tkinter import ttk
+from tkinter import messagebox, ttk
 import xml.etree.ElementTree as ET
 from urllib.parse import urlencode
 
 from logistra import Client, shipment_id
 from ui_theme import asset, theme_color
 from localization import translate
+from tooltips import Tooltip
 
 PERIOD_PRESETS = ('Šodien', 'Pēdējās 7 dienas', 'Pēdējās 30 dienas', 'Šonedēļ',
                   'Pagājušajā nedēļā', 'Šomēnes', 'Pagājušajā mēnesī', 'Šogad',
@@ -168,49 +169,60 @@ class ShipmentBrowser:
         self.end_date = tk.StringVar(value=date.today().strftime('%d.%m.%Y'))
         self.notice = tk.StringVar(value='Ielādē sūtījumus no Cargonizer. Izvēlētais sūtījums būs pieejams PDF lejupielādei un pādrukai.')
         self.filter_info = tk.StringVar(value='Filtri attiecas uz ielādētajiem sūtījumiem un to izveides datumu.')
-        ttk.Label(parent, text='Sūtījumi no Cargonizer', style='Title.TLabel').pack(anchor='w', pady=(0, 12))
         toolbar = ttk.Frame(parent)
         toolbar.pack(fill='x')
         for label in ('Visi', 'Atvērtie', 'Nosūtītie'):
-            ttk.Radiobutton(toolbar, text=label, value=label, variable=self.view, command=self.load).pack(side='left', padx=(0, 12))
-        self.carriers = ttk.Combobox(toolbar, textvariable=self.carrier, values=['Visi pārvadātāji'], state='readonly', width=22)
+            ttk.Radiobutton(toolbar, text=label, value=label, variable=self.view, command=self.load, style='Compact.TRadiobutton').pack(side='left', padx=(0, 6))
+        self.carriers = ttk.Combobox(toolbar, textvariable=self.carrier, values=['Visi pārvadātāji'], state='readonly', width=20, style='Compact.TCombobox')
         self.carriers.pack(side='left', padx=(6, 12))
         self.carriers.bind('<<ComboboxSelected>>', lambda _: self.render())
-        period_box = ttk.Frame(parent)
-        period_box.pack(fill='x', pady=(10, 0))
+        period_box = ttk.Frame(toolbar)
+        period_box.pack(side='left', padx=(8, 0))
         ttk.Label(period_box, text='Periods').pack(side='left', padx=(0, 8))
         preset_picker = ttk.Combobox(period_box, textvariable=self.period, values=PERIOD_PRESETS,
-                                    state='readonly', width=25)
+                                    state='readonly', width=22, style='Compact.TCombobox')
         preset_picker.pack(side='left')
         preset_picker.bind('<<ComboboxSelected>>', self.choose_period)
         search_box = ttk.Frame(parent)
-        search_box.pack(fill='x', pady=12)
+        search_box.pack(fill='x', pady=6)
         ttk.Label(search_box, text='Meklēt').pack(side='left', padx=(0, 8))
-        search_entry = ttk.Entry(search_box, textvariable=self.search, width=28)
+        search_entry = ttk.Entry(search_box, textvariable=self.search, width=22, style='Compact.TEntry')
         search_entry.pack(side='left', padx=(0, 14))
         ttk.Label(search_box, text='No').pack(side='left', padx=(0, 5))
-        start_entry = ttk.Entry(search_box, textvariable=self.start_date, width=12)
+        start_entry = ttk.Entry(search_box, textvariable=self.start_date, width=11, style='Compact.TEntry')
         start_entry.pack(side='left', padx=(0, 8))
-        ttk.Button(search_box, text='▦', width=3, command=lambda: self.open_calendar(start_entry, self.start_date)).pack(side='left', padx=(0, 8))
+        ttk.Button(search_box, text='▦', width=2, style='Compact.TButton', command=lambda: self.open_calendar(start_entry, self.start_date)).pack(side='left', padx=(0, 8))
         ttk.Label(search_box, text='Līdz').pack(side='left', padx=(0, 5))
-        end_entry = ttk.Entry(search_box, textvariable=self.end_date, width=12)
+        end_entry = ttk.Entry(search_box, textvariable=self.end_date, width=11, style='Compact.TEntry')
         end_entry.pack(side='left', padx=(0, 8))
-        ttk.Button(search_box, text='▦', width=3, command=lambda: self.open_calendar(end_entry, self.end_date)).pack(side='left', padx=(0, 8))
+        ttk.Button(search_box, text='▦', width=2, style='Compact.TButton', command=lambda: self.open_calendar(end_entry, self.end_date)).pack(side='left', padx=(0, 8))
         for entry in (search_entry, start_entry, end_entry):
             entry.bind('<Return>', lambda _: self.apply_filters())
-        ttk.Button(search_box, text='Filtrēt', command=self.apply_filters).pack(side='left', padx=(0, 8))
-        ttk.Button(search_box, text='Notīrīt filtrus', command=self.clear).pack(side='left')
-        ttk.Label(parent, textvariable=self.filter_info, wraplength=1000).pack(anchor='w', pady=(0, 10))
+        ttk.Button(search_box, text='Filtrēt', command=self.apply_filters, style='Compact.TButton').pack(side='left', padx=(0, 8))
+        ttk.Button(search_box, text='Notīrīt filtrus', command=self.clear, style='Compact.TButton').pack(side='left')
         controls = ttk.Frame(parent)
-        controls.pack(fill='x', pady=(0, 12))
+        controls.pack(fill='x', pady=(0, 6))
         app.button(controls, 'Ielādēt sūtījumus', lambda: self.load(fresh=True))
         app.button(controls, 'Lejupielādēt PDF', lambda: self.selected_action(app.download))
         app.button(controls, 'Pādrukāt etiķeti', lambda: self.selected_action(app.quick_reprint))
         ttk.Button(controls, text='Atvērt PDF mapi', command=app.open_folder).pack(side='left', padx=(0, 10))
+        for button in controls.winfo_children():
+            button.configure(style='Compact.Primary.TButton' if button.cget('style') == 'Primary.TButton' else 'Compact.TButton')
+        help_label = ttk.Button(controls, text='Palīdzība', style='Compact.TButton',
+                                command=lambda: messagebox.showinfo(translate(parent, 'Palīdzība'),
+                                                                    translate(parent, help_text.get()), parent=parent))
+        help_label.pack(side='right')
+        help_text = tk.StringVar(master=parent)
+        def update_help(*_):
+            help_text.set(self.filter_info.get() + '\n\n' + 'Ctrl: atlasīt atsevišķus sūtījumus. Shift: atlasīt rindu diapazonu. Datumi: dd.mm.gggg. Ielāde neko nedrukā.')
+        self.filter_info.trace_add('write', update_help)
+        update_help()
+        self.filter_tooltip = Tooltip((help_label,), help_text)
         footer = ttk.Frame(parent)
-        footer.pack(side='bottom', fill='x', pady=(12, 0))
-        ttk.Label(footer, textvariable=self.notice, wraplength=900).pack(anchor='w')
-        ttk.Label(footer, text='Ctrl: atlasīt atsevišķus sūtījumus. Shift: atlasīt rindu diapazonu. Datumi: dd.mm.gggg. Ielāde neko nedrukā.', wraplength=900).pack(anchor='w', pady=(8, 0))
+        footer.pack(side='bottom', fill='x', pady=(4, 0))
+        notice_label = ttk.Label(footer, textvariable=self.notice, wraplength=1000)
+        notice_label.pack(anchor='w')
+        footer.bind('<Configure>', lambda event: notice_label.configure(wraplength=max(200, event.width)))
         grid = ttk.Frame(parent)
         grid.pack(fill='both', expand=True)
         grid.columnconfigure(0, weight=1)

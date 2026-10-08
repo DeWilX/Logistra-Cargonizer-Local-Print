@@ -51,7 +51,7 @@ class SectionNavigation(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
         self.bar = ttk.Frame(self)
-        self.bar.pack(fill='x', pady=(0,16))
+        self.bar.pack(fill='x', pady=(0,6))
         self.content = ttk.Frame(self)
         self.content.pack(fill='both', expand=True)
         self.items = []
