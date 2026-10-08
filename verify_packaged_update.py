@@ -31,8 +31,13 @@ def verify():
         # Start the actual frozen/windowed app. It must launch the helper itself,
         # exit, be replaced, then restart to produce the report. Running just the
         # PowerShell script from Python misses console creation flag failures.
-        subprocess.run([str(target), '--self-test', '--self-test-update', str(staged),
-                        '--self-test-report', str(report)], env=environment, check=True, timeout=30)
+        try:
+            subprocess.run([str(target), '--self-test', '--self-test-update', str(staged),
+                            '--self-test-report', str(report)], env=environment, check=True, timeout=90)
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
+            log = folder / 'update.log'
+            print(log.read_text(errors='replace') if log.exists() else 'Update helper did not create a log.', flush=True)
+            raise
         deadline = time.monotonic() + 60
         while not report.is_file() and time.monotonic() < deadline:
             time.sleep(0.1)

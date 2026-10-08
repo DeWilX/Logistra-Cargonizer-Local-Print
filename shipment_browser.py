@@ -195,6 +195,12 @@ class ShipmentBrowser:
         ttk.Label(search_box, text='Līdz').pack(side='left', padx=(0, 5))
         end_entry = ttk.Entry(search_box, textvariable=self.end_date, width=11, style='Compact.TEntry')
         end_entry.pack(side='left', padx=(0, 8))
+        self.date_entries = ((start_entry, self.start_date), (end_entry, self.end_date))
+        self.valid_dates = {str(self.start_date): self.start_date.get(), str(self.end_date): self.end_date.get()}
+        for entry, variable in self.date_entries:
+            entry.configure(validate='key', validatecommand=(entry.register(
+                lambda proposed, variable=variable: self.validate_date_input(variable, proposed)), '%P'))
+            entry.bind('<FocusOut>', lambda _, variable=variable: self.commit_date(variable))
         ttk.Button(search_box, text='▦', width=2, style='Compact.TButton', command=lambda: self.open_calendar(end_entry, self.end_date)).pack(side='left', padx=(0, 8))
         for entry in (search_entry, start_entry, end_entry):
             entry.bind('<Return>', lambda _: self.apply_filters())
@@ -258,9 +264,34 @@ class ShipmentBrowser:
             self.period.set('Pielāgots periods')
         self.schedule_filter()
 
+    def validate_date_input(self, variable, proposed):
+        if len(proposed) < 10 and all(char.isdigit() or char == '.' for char in proposed):
+            return True
+        try:
+            parse_date_range(proposed if variable is self.start_date else self.start_date.get(),
+                             proposed if variable is self.end_date else self.end_date.get())
+            if len(proposed) != 10:
+                raise ValueError
+        except ValueError:
+            self.notice.set('Nederīgs datumu diapazons: ievadi dd.mm.gggg; sākums nedrīkst būt pēc beigām.')
+            return False
+        return True
+
+    def commit_date(self, variable):
+        try:
+            parse_date_range(self.start_date.get(), self.end_date.get())
+        except ValueError:
+            variable.set(self.valid_dates[str(variable)])
+            self.notice.set('Nederīgs datumu diapazons: ievadi dd.mm.gggg; sākums nedrīkst būt pēc beigām.')
+            return
+        self.valid_dates.update({str(value): value.get() for _, value in self.date_entries})
+
     def open_calendar(self, entry, variable):
         from date_picker import DatePicker
-        DatePicker(entry, variable)
+        self.commit_date(variable)
+        start, end = parse_date_range(self.start_date.get(), self.end_date.get())
+        DatePicker(entry, variable, minimum=start if variable is self.end_date else None,
+                   maximum=end if variable is self.start_date else None)
 
     def choose_period(self, _=None):
         name = self.period.get()
@@ -346,10 +377,10 @@ class ShipmentBrowser:
             start, end = parse_date_range(self.start_date.get(), self.end_date.get())
             rows = filter_shipments(self.rows, self.carrier.get(), self.search.get(), start, end)
         except ValueError:
-            self.table.delete(*self.table.get_children())
             self.filter_info.set('Nederīgs datumu diapazons: ievadi dd.mm.gggg; sākums nedrīkst būt pēc beigām.')
-            self.notice.set('Filtrs nav piemērots. Izlabo datumu vai nospied “Notīrīt filtrus”.')
+            self.notice.set(self.filter_info.get())
             return
+        self.valid_dates.update({str(value): value.get() for _, value in self.date_entries})
         self.table.delete(*self.table.get_children())
         states = {'open': translate(self.table, 'Atvērts'), 'transferred': translate(self.table, 'Nosūtīts')}
         def insert_batch(start_index=0):

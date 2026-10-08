@@ -101,6 +101,8 @@ class NavigationStatusTests(unittest.TestCase):
         browser.action_image = ''
         browser.start_date = Mock(get=Mock(return_value=''))
         browser.end_date = Mock(get=Mock(return_value=''))
+        browser.date_entries = ((None, browser.start_date), (None, browser.end_date))
+        browser.valid_dates = {}
         browser.carrier = Mock(get=Mock(return_value='Visi pārvadātāji'))
         browser.search = Mock(get=Mock(return_value=''))
         browser.notice = browser.filter_info = Mock()
