@@ -4,6 +4,7 @@ import tkinter as tk
 import time
 from tkinter import ttk
 import unittest
+from pathlib import Path
 from unittest.mock import Mock, patch
 import friendly_gui
 from localization import Locale, install_widgets
@@ -83,10 +84,11 @@ class NavigationStatusTests(unittest.TestCase):
             release.set()
             self.assertTrue(finished.wait(1))
 
-    def test_status_reasons_distinguish_missing_printer_and_unconfirmed_test(self):
+    def test_status_reasons_distinguish_missing_printer_and_printing_program(self):
         cfg = {'sender_id': '12345', 'printer': 'Label printer'}
         self.assertIn('nav atrasts', friendly_gui.status_explanations(cfg, [])[1])
-        self.assertIn('PDF drukāšanas programmu', friendly_gui.status_explanations(cfg, ['Label printer'])[1])
+        with patch.object(friendly_gui.engine, 'pdf_executable', return_value=Path('/missing-logistra-printing-program')):
+            self.assertIn('PDF drukāšanas programmu', friendly_gui.status_explanations(cfg, ['Label printer'])[1])
         cfg['printer'] = 'Microsoft Print to PDF'
         self.assertIn('PDF eksports', friendly_gui.status_explanations(cfg, [cfg['printer']])[1])
         cfg['printer'] = ''
