@@ -5,6 +5,26 @@ import friendly_gui as gui
 
 
 class GuidedSetupTests(unittest.TestCase):
+    def test_automatic_printing_can_start_without_test_print(self):
+        app = gui.FriendlyApp.__new__(gui.FriendlyApp)
+        app.task_busy = False
+        app.worker = None
+        app.printing = Mock(get=Mock(return_value=True))
+        app.printer_ui = Mock(names=['Label printer'])
+        app.tabs = Mock()
+        app.log = Mock()
+        app.task = lambda action, completed: completed(action())
+        cfg = {'printer': 'Label printer', 'print_backend': 'adobe', 'api_verified': True,
+               'list_verified': True, 'printer_tested': False}
+        with patch.object(gui, 'read_config', return_value=cfg), patch.object(gui, 'write_config'), \
+             patch.object(gui, 'prepare_baseline', return_value=0), \
+             patch.object(gui.engine, 'pdf_executable', return_value='Reader.exe'), \
+             patch.object(gui.Path, 'is_file', return_value=True), \
+             patch.object(gui.App, 'start') as start:
+            app.start()
+        start.assert_called_once()
+        app.tabs.select.assert_not_called()
+
     def test_dashboard_uses_saved_interval_and_refreshes_after_change(self):
         app = gui.FriendlyApp.__new__(gui.FriendlyApp)
         app.worker = None
@@ -64,14 +84,13 @@ class GuidedSetupTests(unittest.TestCase):
             self.assertEqual(gui.verify_open_shipment({}, '123'), '123')
         client.pdf.assert_called_once_with('123')
 
-    def test_transferred_shipment_does_not_enable_automation(self):
+    def test_transferred_shipment_is_valid_for_automation_verification(self):
         client = Mock()
         client.ids.return_value = ['123']
         client.get.return_value = b'<consignments><consignment><id>123</id><state>transferred</state></consignment></consignments>'
         with patch.object(gui.engine, 'Client', return_value=client):
-            with self.assertRaises(ValueError):
-                gui.verify_open_shipment({}, '123')
-        client.pdf.assert_not_called()
+            self.assertEqual(gui.verify_open_shipment({}, '123'), '123')
+        client.pdf.assert_called_once_with('123')
 
     def test_missing_shipment_does_not_enable_automation(self):
         client = Mock()
@@ -80,10 +99,13 @@ class GuidedSetupTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 gui.verify_open_shipment({}, '123')
 
-    def test_changed_printer_requires_a_new_test(self):
+    def test_test_print_is_optional_but_printing_program_is_required(self):
         cfg = {'printer':'TSC', 'print_backend':'cups', 'printer_tested': True,
                'tested_print_setup':['TSC','cups','/usr/bin/lp']}
-        with patch.object(gui.engine, 'pdf_executable', return_value='/usr/bin/lp'):
+        with patch.object(gui.engine, 'pdf_executable', return_value='/usr/bin/lp'), patch.object(gui.Path, 'is_file', return_value=True):
             self.assertTrue(gui.print_setup_matches(cfg))
             cfg['printer']='Other'
+            cfg['printer_tested'] = False
+            self.assertTrue(gui.print_setup_matches(cfg))
+        with patch.object(gui.Path, 'is_file', return_value=False):
             self.assertFalse(gui.print_setup_matches(cfg))

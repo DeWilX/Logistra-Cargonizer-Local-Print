@@ -275,13 +275,9 @@ class App:
             return
         def action():
             with engine.single_worker(), contextlib.closing(engine.database()) as db:
-                ids = engine.Client(read_config()).ids()
                 if db.execute("SELECT 1 FROM settings WHERE name='baseline'").fetchone():
                     raise RuntimeError('Sākuma atskaite jau saglabāta; tā netiks pārrakstīta.')
-                with db:
-                    db.executemany('INSERT OR IGNORE INTO jobs VALUES (?, ?)', [(i, 'baseline') for i in ids])
-                    db.execute("INSERT INTO settings VALUES ('baseline', 'yes')")
-                return len(ids)
+                return engine.discovery_baseline(db, engine.Client(read_config()))
         self.task(action, lambda count: (self.log(f'Sākuma atskaite: {count} esoši sūtījumi netiks drukāti.'), self.refresh_jobs()))
 
     def download(self, identifiers=None):
@@ -326,11 +322,11 @@ class App:
                 if not db.execute("SELECT 1 FROM settings WHERE name='baseline'").fetchone():
                     raise RuntimeError('Vispirms saglabā sākuma atskaiti.')
                 client = engine.Client(cfg)
+                engine.discovery_baseline(db, client)
                 report('Automātika darbojas: ' + ('drukā etiķetes' if cfg.get('auto_print') else 'tikai lejupielādē PDF'))
                 while not self.stop.is_set():
                     try:
-                        ids = set(client.ids())
-                        ids.update(i for i, in db.execute("SELECT id FROM jobs WHERE status='downloaded'"))
+                        ids = engine.discover_jobs(db, client)
                         for identifier in sorted(ids, key=int):
                             if self.stop.is_set():
                                 break
@@ -365,7 +361,7 @@ class App:
         except sqlite3.Error:
             return
         self.table.delete(*self.table.get_children())
-        labels = {'baseline': 'Esošs pirms palaišanas', 'downloaded': 'PDF lejupielādēts',
+        labels = {'pending': 'Gaida PDF', 'baseline': 'Esošs pirms palaišanas', 'downloaded': 'PDF lejupielādēts',
                   'submitted': 'Nosūtīts drukas rindai', 'submitting': 'Drukas rezultāts jāpārbauda', 'uncertain': 'Neskaidra druka — jāpārbauda'}
         for identifier, status in rows:
             from localization import translate

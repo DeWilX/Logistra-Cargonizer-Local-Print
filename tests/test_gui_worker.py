@@ -2,6 +2,7 @@ import queue
 import tempfile
 import threading
 import unittest
+from datetime import date
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -27,6 +28,7 @@ class GuiWorkerTests(unittest.TestCase):
             (Path(folder) / 'data').mkdir()
             db = logistra.database()
             db.execute("INSERT INTO settings VALUES ('baseline', 'yes')")
+            db.execute("INSERT INTO settings VALUES ('discovery_checkpoint', ?)", (date.today().isoformat(),))
             db.commit()
             db.close()
             app = logistra_gui.App.__new__(logistra_gui.App)

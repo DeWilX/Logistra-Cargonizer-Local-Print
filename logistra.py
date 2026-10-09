@@ -16,6 +16,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+from datetime import date, timedelta
 from app_paths import application_root
 from network_tls import verified_context
 
@@ -118,20 +119,47 @@ class Client:
                 raise RuntimeError(f'API pieprasījumu limits; pauze {int(delay)} sekundes.') from None
             raise RuntimeError(f'API HTTP {error.code}; check API key, Sender ID and endpoint.') from None
 
-    def ids(self):
+    def ids(self, since=None):
         if not self.cfg.get('list_verified') or not self.cfg.get('list_path'):
             raise RuntimeError('Automatic discovery is not configured. Verify the list endpoint and pagination first; see README.md.')
-        body = self.get(self.cfg['list_path'], fresh=True)
-        ids = parse_ids(body)
-        for item in ET.fromstring(body).findall('consignment'):
-            self.references[shipment_id(item.findtext('id') or item.get('id'))] = item.findtext('consignor-reference', '')
-        pages = self.pagination.get('Total-Pages')
-        count = self.pagination.get('Total-Count')
-        if pages is not None and int(pages) > 1:
-            raise RuntimeError('API list has multiple pages. Pagination must be configured before watching; no jobs processed.')
-        if count is not None and int(count) != len(ids):
+        since = since or date.today() - timedelta(days=1)
+        path = urllib.parse.urlsplit(self.cfg['list_path'])
+        query = dict(urllib.parse.parse_qsl(path.query))
+        # A shipment can leave open state between polls. Query all states using
+        # the same endpoint/filter already used by the shipment browser.
+        for key in ('state', 'state[]', 'from', 'to', 'page', 'per_page'):
+            query.pop(key, None)
+        query.update({'state[]': 'all', 'from': since.isoformat(), 'to': date.today().isoformat(), 'per_page': 100})
+        records, references, states, expected = set(), {}, {}, None
+        page = 1
+        while True:
+            query['page'] = page
+            body = self.get(path.path + '?' + urllib.parse.urlencode(query), fresh=True)
+            ids = parse_ids(body)
+            try:
+                pages = int(self.pagination['Total-Pages'])
+                count = int(self.pagination['Total-Count'])
+            except (KeyError, TypeError, ValueError):
+                raise RuntimeError('API pagination is missing or invalid; no jobs processed.') from None
+            if pages < 0 or pages > 1000 or count < 0 or (pages == 0 and count):
+                raise RuntimeError('API pagination is invalid; no jobs processed.')
+            if expected is None:
+                expected = (pages, count)
+            if expected != (pages, count) or records.intersection(ids) or (not ids and count):
+                raise RuntimeError('API list changed or is incomplete; retry on the next poll.')
+            records.update(ids)
+            for item in ET.fromstring(body).findall('consignment'):
+                identifier = shipment_id(item.findtext('id') or item.get('id'))
+                references[identifier] = item.findtext('consignor-reference', '')
+                states[identifier] = item.findtext('state', '')
+            if page >= pages:
+                break
+            page += 1
+        if count != len(records):
             raise RuntimeError('API list count differs from parsed IDs; no jobs processed.')
-        return ids
+        self.references.update(references)
+        self.discovered_states = states
+        return sorted((identifier for identifier in records if states[identifier] in ('', 'open', 'transferred')), key=int)
 
     def pdf(self, identifier):
         query = urllib.parse.urlencode({'consignment_ids[]': shipment_id(identifier)})
@@ -303,6 +331,37 @@ def print_pdf(cfg, file):
         raise RuntimeError(f'PDF print command failed, exit code {result.returncode}. Check the Windows queue before retrying.')
 
 
+def discovery_baseline(db, client):
+    """Safely migrate open-only baselines without printing transferred history."""
+    if db.execute("SELECT 1 FROM settings WHERE name='discovery_checkpoint'").fetchone():
+        return 0
+    ids = client.ids(since=date.today() - timedelta(days=1))
+    with db:
+        db.executemany('INSERT OR IGNORE INTO jobs VALUES (?, ?)', [(identifier, 'baseline') for identifier in ids])
+        db.execute("INSERT OR IGNORE INTO settings VALUES ('baseline', 'yes')")
+        db.execute("INSERT INTO settings VALUES ('discovery_checkpoint', ?)", (date.today().isoformat(),))
+    return len(ids)
+
+
+def discover_jobs(db, client):
+    checkpoint = db.execute("SELECT value FROM settings WHERE name='discovery_checkpoint'").fetchone()
+    if not checkpoint:
+        raise RuntimeError('Prepare the discovery baseline before watching.')
+    # Overlap a full day around the last successful discovery. After downtime,
+    # catch up from that persisted date; pending PDFs survive beyond this window.
+    since = date.fromisoformat(checkpoint[0]) - timedelta(days=1)
+    ids = client.ids(since=since)
+    with db:
+        states = getattr(client, 'discovered_states', {})
+        if isinstance(states, dict):
+            for identifier, state in states.items():
+                if state not in ('', 'open', 'transferred'):
+                    db.execute("UPDATE jobs SET status='ignored' WHERE id=? AND status='pending'", (identifier,))
+        db.executemany('INSERT OR IGNORE INTO jobs VALUES (?, ?)', [(identifier, 'pending') for identifier in ids])
+        db.execute("UPDATE settings SET value=? WHERE name='discovery_checkpoint'", (date.today().isoformat(),))
+    return sorted({identifier for identifier, in db.execute("SELECT id FROM jobs WHERE status IN ('pending', 'downloaded')")}, key=int)
+
+
 def process(db, client, cfg, identifier, printing=False):
     identifier = shipment_id(identifier)
     if printing and is_pdf_export_printer(cfg):
@@ -312,7 +371,7 @@ def process(db, client, cfg, identifier, printing=False):
         return
     directory = pdf_directory(cfg)
     file = find_label(identifier, ('',), directory)
-    if file is None or not row:
+    if file is None or not row or row[0] == 'pending':
         file = download_label(client, identifier, directory=directory)
         status(db, identifier, 'downloaded')
         print(f'Downloaded PDF: {identifier}', flush=True)
@@ -360,13 +419,10 @@ def main():
             for name, value in client.pagination.items():
                 print(f'X-Pagination-{name}: {value if value is not None else "not provided"}')
         elif args.command == 'baseline':
-            ids = client.ids()
             if db.execute("SELECT 1 FROM settings WHERE name='baseline'").fetchone():
                 raise RuntimeError('Baseline already exists; it will not be overwritten.')
-            with db:
-                db.executemany('INSERT OR IGNORE INTO jobs VALUES (?, ?)', [(i, 'baseline') for i in ids])
-                db.execute("INSERT INTO settings VALUES ('baseline', 'yes')")
-            print(f'Baseline saved: {len(ids)} existing shipments will not be automatically printed.')
+            count = discovery_baseline(db, client)
+            print(f'Baseline saved: {count} existing shipments will not be automatically printed.')
         elif args.command == 'download':
             process(db, client, cfg, args.id)
         elif args.command == 'test-print':
@@ -379,11 +435,11 @@ def main():
             if not db.execute("SELECT 1 FROM settings WHERE name='baseline'").fetchone():
                 raise RuntimeError('Run baseline first, after verifying the list API.')
             interval = max(5, int(cfg['poll_seconds']))
+            discovery_baseline(db, client)
             print('Watching. Ctrl+C stops. Printing: ' + str(args.printing), flush=True)
             while True:
                 try:
-                    ids = set(client.ids())
-                    ids.update(i for i, in db.execute("SELECT id FROM jobs WHERE status='downloaded'"))
+                    ids = discover_jobs(db, client)
                     for identifier in sorted(ids, key=int):
                         try:
                             process(db, client, cfg, identifier, args.printing)

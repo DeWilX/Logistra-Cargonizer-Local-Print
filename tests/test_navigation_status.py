@@ -86,7 +86,7 @@ class NavigationStatusTests(unittest.TestCase):
     def test_status_reasons_distinguish_missing_printer_and_unconfirmed_test(self):
         cfg = {'sender_id': '12345', 'printer': 'Label printer'}
         self.assertIn('nav atrasts', friendly_gui.status_explanations(cfg, [])[1])
-        self.assertIn('testa druka nav apstiprināta', friendly_gui.status_explanations(cfg, ['Label printer'])[1])
+        self.assertIn('PDF drukāšanas programmu', friendly_gui.status_explanations(cfg, ['Label printer'])[1])
         cfg['printer'] = 'Microsoft Print to PDF'
         self.assertIn('PDF eksports', friendly_gui.status_explanations(cfg, [cfg['printer']])[1])
         cfg['printer'] = ''

@@ -47,6 +47,7 @@ class LabelNameTests(unittest.TestCase):
     def test_reference_from_list_and_detail_and_missing_reference(self):
         with patch.object(logistra, 'api_key', return_value='test'):
             client = logistra.Client({'sender_id': '12345', 'list_verified': True, 'list_path': '/consignments.xml'})
+        client.pagination = {'Total-Pages': '1', 'Total-Count': '1'}
         with patch.object(client, 'get', return_value=b'<consignments><consignment id="123"><consignor-reference>ORD-12345678901</consignor-reference></consignment></consignments>') as get:
             self.assertEqual(client.ids(), ['123'])
             self.assertEqual(client.reference('123'), 'ORD-12345678901')

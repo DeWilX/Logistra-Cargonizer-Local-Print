@@ -24,29 +24,25 @@ def verify_open_shipment(cfg, identifier):
     identifier = engine.shipment_id(identifier)
     client = engine.Client({**cfg, 'list_verified': True})
     if identifier not in client.ids():
-        raise ValueError('Šis sūtījums nav jauno sūtījumu sarakstā. Izveido jaunu open sūtījumu un mēģini vēlreiz.')
+        raise ValueError('Šis sūtījums nav pēdējo sūtījumu sarakstā. Izveido jaunu sūtījumu un mēģini vēlreiz.')
     root = ET.fromstring(client.get(f'/consignments/{identifier}.xml'))
-    item = root.find('consignment')
-    if item is None or item.findtext('id') != identifier or item.findtext('state') != 'open':
-        raise ValueError('Pārbaudei vajadzīgs jauns sūtījums ar open statusu.')
+    item = root if root.tag == 'consignment' else root.find('consignment')
+    if item is None or item.findtext('id') != identifier or item.findtext('state') not in ('open', 'transferred'):
+        raise ValueError('Pārbaudei vajadzīgs atvērts vai nosūtīts sūtījums.')
     client.pdf(identifier)
     return identifier
 
 
 def prepare_baseline(cfg):
     with engine.single_worker(), contextlib.closing(engine.database()) as db:
-        if db.execute("SELECT 1 FROM settings WHERE name='baseline'").fetchone():
-            return 0
-        ids = engine.Client(cfg).ids()
-        with db:
-            db.executemany('INSERT OR IGNORE INTO jobs VALUES (?, ?)', [(i, 'baseline') for i in ids])
-            db.execute("INSERT INTO settings VALUES ('baseline', 'yes')")
-        return len(ids)
+        return engine.discovery_baseline(db, engine.Client(cfg))
 
 
 def print_setup_matches(cfg):
-    identity = [cfg.get('printer'), cfg.get('print_backend'), str(engine.pdf_executable(cfg))]
-    return bool(not engine.is_pdf_export_printer(cfg) and cfg.get('printer_tested') and cfg.get('tested_print_setup') == identity)
+    try:
+        return bool(cfg.get('printer') and not engine.is_pdf_export_printer(cfg) and Path(engine.pdf_executable(cfg)).is_file())
+    except (RuntimeError, OSError, ValueError):
+        return False
 
 
 def status_explanations(cfg, names, loaded=None):
@@ -56,8 +52,8 @@ def status_explanations(cfg, names, loaded=None):
     printer = ('Printeris nav izvēlēts. Izvēlies un saglabā printeri sadaļā “Printeris un PDF”.' if not cfg.get('printer') else
                'Saglabātais printeris nav atrasts. Pievieno printeri datoram un atsvaidzini printeru sarakstu.' if cfg.get('printer') not in names else
                'Izvēlēts PDF eksports. Fiziskā printera testa druka vēl nav apstiprināta.' if engine.is_pdf_export_printer(cfg) else
-               'Printeris ir atrasts un testa druka apstiprināta.' if print_setup_matches(cfg) else
-               'Printeris ir atrasts, bet testa druka nav apstiprināta vai drukas iestatījumi ir mainīti. Pārbaudi testa etiķeti.')
+               'Printeris ir gatavs. Testa druka ir neobligāta.' if print_setup_matches(cfg) else
+               'Printeris ir atrasts. Izvēlies PDF drukāšanas programmu sadaļā “Printeris un PDF”.')
     shipments = ('Sūtījumi veiksmīgi ielādēti. Tukšs saraksts nav kļūda.' if loaded is True else
                  'Sūtījumu ielāde neizdevās. Kļūdas apraksts redzams Darbību žurnālā. Mēģini ielādēt vēlreiz.' if loaded is False else
                  'Sūtījumu saraksta pārbaude ir apstiprināta.' if cfg.get('list_verified') else
@@ -559,7 +555,7 @@ class FriendlyApp(App):
             self.log('Vispirms pieslēdz kontu ar “Saglabāt un pārbaudīt”.')
             return
         from tkinter import simpledialog
-        identifier = simpledialog.askstring('Jaunā sūtījuma pārbaude', 'Izveido jaunu open sūtījumu Cargonizer.\nIevadi tā ID no lapas adreses:', parent=self.root)
+        identifier = simpledialog.askstring('Jaunā sūtījuma pārbaude', 'Izveido jaunu sūtījumu Cargonizer. Tas var būt jau nosūtīts.\nIevadi tā ID no lapas adreses:', parent=self.root)
         if not identifier:
             return
         def action():
@@ -707,8 +703,8 @@ class FriendlyApp(App):
             self.log('Pabeidz konta pieslēgšanu un jaunā sūtījuma pārbaudi.')
             self.tabs.select(self.home)
             return
-        if cfg.get('auto_print') and not print_setup_matches(cfg):
-            self.log('Veic testa druku un apstiprini printera rezultātu.')
+        if cfg.get('auto_print') and (cfg.get('printer') not in self.printer_ui.names or not print_setup_matches(cfg)):
+            self.log('Izvēlies atrastu printeri un PDF drukāšanas programmu. Testa druka ir neobligāta.')
             self.tabs.select(self.printer_tab)
             return
         def action():

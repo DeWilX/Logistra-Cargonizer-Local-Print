@@ -13,6 +13,13 @@ Iestatījumi|Settings|Innstillinger
 Darbību žurnāls|Activity log|Aktivitetslogg
 Konts|Account|Konto
 Printeris|Printer|Skriver
+Printeris ir gatavs. Testa druka ir neobligāta.|The printer is ready. A test print is optional.|Skriveren er klar. Testutskrift er valgfritt.
+Printeris ir atrasts. Izvēlies PDF drukāšanas programmu sadaļā “Printeris un PDF”.|The printer was found. Choose a PDF printing application under “Printer and PDF”.|Skriveren ble funnet. Velg et program for PDF-utskrift under «Skriver og PDF».
+Izvēlies atrastu printeri un PDF drukāšanas programmu. Testa druka ir neobligāta.|Choose an available printer and PDF printing application. A test print is optional.|Velg en tilgjengelig skriver og et program for PDF-utskrift. Testutskrift er valgfritt.
+Gaida PDF|Waiting for PDF|Venter på PDF
+Izvēlies un saglabā printeri. Testa druka ir neobligāta. Iebūvēta testa lapa: 102 × 192 mm.|Choose and save a printer. A test print is optional. Included test page: 102 × 192 mm.|Velg og lagre en skriver. Testutskrift er valgfritt. Innebygd testside: 102 × 192 mm.
+Izveido jaunu sūtījumu Cargonizer. Tas var būt jau nosūtīts.|Create a new shipment in Cargonizer. It may already be transferred.|Opprett en ny sending i Cargonizer. Den kan allerede være overført.
+Ievadi tā ID no lapas adreses:|Enter its ID from the page URL:|Skriv inn ID-en fra sidens URL:
 Sūtījumi|Shipments|Sendinger
 Pirmā iestatīšana|Initial setup|Førstegangsoppsett
 1. Pieslēgt kontu|1. Connect account|1. Koble til konto

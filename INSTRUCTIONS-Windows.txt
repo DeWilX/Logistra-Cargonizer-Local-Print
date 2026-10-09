@@ -7,7 +7,7 @@ GETTING STARTED
 2. In Settings, enter your own Cargonizer Sender ID and API key.
    Click Save and check. Leaving the key field blank keeps the existing key.
 3. In Printer and PDF, select an installed printer and save it.
-   Test print uses the included 102 x 192 mm test label in your selected
+   Test print is optional. It uses the included 102 x 192 mm test label in your selected
    language: Latvian, English or Norwegian Bokmal.
    When printing through Adobe, use Actual size / 100% and one copy.
 4. Shipments load on launch when an API key is saved.
@@ -18,6 +18,10 @@ GETTING STARTED
    configured download folder.
 6. Enable automation separately. On its first run, existing shipments are
    recorded as a baseline. Uncertain print results are not retried automatically.
+   Automation checks both open and transferred shipments. Shipments are still
+   found if they transfer between checks. Unavailable PDFs remain queued for retry.
+   When upgrading from open-only automation, the first start records current
+   shipments as a new baseline without printing old history.
 
 Microsoft Print to PDF saves a copy of the original PDF in your chosen folder.
 It does not test a physical printer. Acceptance of a print command does not

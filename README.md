@@ -4,7 +4,7 @@ A Windows desktop application for downloading Cargonizer shipping labels and pri
 
 ## Getting started
 
-Download `Logistra-Print.exe` from this repository's GitHub Releases and put it in a permanent, writable folder. In Settings, enter your own Cargonizer Sender ID and API key. Choose and save a locally installed printer, then verify the included test label before enabling automatic printing. No account, company or printer is preconfigured.
+Download `Logistra-Print.exe` from this repository's GitHub Releases and put it in a permanent, writable folder. In Settings, enter your own Cargonizer Sender ID and API key. Choose and save a locally installed printer and PDF printing application. The included test label is optional. No account, company or printer is preconfigured.
 
 For macOS, download the Apple Silicon or Intel ZIP, extract it and move `Logistra.app` to Applications. Python is included. The app is not Developer ID signed or notarized. For an unidentified-developer warning, follow the **System Settings → Privacy & Security → Open Anyway** steps in [README-macOS.md](README-macOS.md), also included in the Mac ZIP. Do not disable Gatekeeper globally or override a warning that specifically detects malware. See [Apple's instructions](https://support.apple.com/102445).
 
@@ -24,7 +24,7 @@ The API key is protected with Windows DPAPI. User settings, the key and printing
 - Hover explanations for account, printer and shipment status. Successful shipment loading, including an empty list, turns the shipment indicator green; automatic printing verification remains separate.
 - Bounded in-memory API cache: history lists for two seconds and shipment details for thirty seconds. Manual reload, automatic discovery and PDF requests always use fresh API data.
 
-Print commands do not prove that a physical label was printed. Install the printer driver, choose the correct paper size and verify barcodes. The included test page is 102 × 192 mm. Automatic discovery currently rejects multiple pages of new shipments; history browsing supports all pages.
+Print commands do not prove that a physical label was printed. Install the printer driver, choose the correct paper size and verify barcodes. The optional included test page is 102 × 192 mm. Automatic discovery checks both open and transferred shipments with complete pagination, so a shipment that transfers between polls can still be found. New IDs are persisted before PDF download; unavailable PDFs are retried and uncertain print submissions are never automatically repeated. A persisted discovery date with a one-day overlap allows catch-up after downtime. The first start, including migration from the old open-only discovery, records currently existing shipments as a baseline without printing them.
 
 ## Build locally
 

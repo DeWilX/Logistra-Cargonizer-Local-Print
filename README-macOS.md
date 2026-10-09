@@ -28,11 +28,13 @@ Move `Logistra.app` to Applications and launch it from there before updating. Co
 
 In Settings, enter your own Cargonizer Sender ID and API key, then save and check the connection. No account or printer is preconfigured. The key is stored in the macOS login Keychain, rather than the configuration or activity log. A Windows DPAPI key file cannot be transferred to a Mac.
 
-Select a printer installed in **System Settings → Printers & Scanners**. The application uses CUPS queues and `lp`, requests one copy and sets `print-scaling=none`. **Test print** sends the included 102 × 192 mm test label in the selected interface language: Latvian, English or Norwegian Bokmål. Check the driver's paper size before printing. Successful submission to a queue does not confirm that a physical label was printed.
+Select a printer installed in **System Settings → Printers & Scanners**. The application uses CUPS queues and `lp`, requests one copy and sets `print-scaling=none`. **Test print** is optional and sends the included 102 × 192 mm test label in the selected interface language: Latvian, English or Norwegian Bokmål. Check the driver's paper size before printing. Successful submission to a queue does not confirm that a physical label was printed.
 
 Shipments load on launch when an API key is available. Choose a period preset or dates in the calendar, then use **Filter** after entering dates manually. Use Command/Ctrl or Shift to select multiple shipments. Hover over the account, printer or shipment status to see the reason for its green or red indicator. A successfully loaded empty shipment list is normal.
 
 Settings, logs and the SQLite print history are stored in `~/Library/Application Support/Logistra`. You can choose the PDF download folder in Settings. Replacing the application preserves these files. Run automatic printing for a Sender ID on only one computer at a time.
+
+Automation checks open and transferred shipments, including all result pages. A shipment can therefore be found after it transfers between checks. New IDs are saved before downloading; PDFs that are not yet available remain queued for retry. The first run, including migration from open-only automation, skips existing shipments as a baseline. After downtime, discovery resumes from its saved date.
 
 Minimizing the window keeps the application running in the background. The Mac must remain powered on and awake. Automatic launch uses `~/Library/LaunchAgents/app.logistra.print.plist`. The system tray feature is available on Windows. Automatic application updates are available in the packaged Windows and Mac versions.
 
