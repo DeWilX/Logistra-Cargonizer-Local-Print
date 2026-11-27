@@ -28,6 +28,10 @@ Pirmā iestatīšana|Initial setup|Førstegangsoppsett
 Apstiprināt manuāli|Dismiss setup|Lukk oppsett
 Aizvērt pirmo iestatīšanu|Dismiss initial setup|Lukk førstegangsoppsett
 Palaist automātiku|Start automation|Start automatikk
+Izlaist pārbaudes un palaist|Skip checks and start|Hopp over kontroller og start
+Izlaist pārbaudes?|Skip checks?|Hoppe over kontroller?
+Automātika sāks darbu bez konta, sūtījumu saraksta un testa drukas pārbaudes. Jau esošie sūtījumi netiks drukāti — tikai jaunie. Turpināt?|Automation will start without checking the account, shipment list or test print. Existing shipments will not be printed — only new ones. Continue?|Automatikken starter uten kontroll av konto, sendingsliste eller testutskrift. Eksisterende sendinger skrives ikke ut — bare nye. Fortsette?
+Pārbaudes izlaistas. Palaiž automātiku…|Checks skipped. Starting automation…|Kontroller hoppet over. Starter automatikken…
 Apturēt|Stop|Stopp
 Automātiski drukāt jaunās etiķetes (izslēgts = tikai saglabāt PDF)|Automatically print new labels (off = save PDF only)|Skriv ut nye etiketter automatisk (av = bare lagre PDF)
 Etiķete vai pādruka|Label or reprint|Etikett eller ny utskrift

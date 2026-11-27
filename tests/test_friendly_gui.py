@@ -25,6 +25,32 @@ class GuidedSetupTests(unittest.TestCase):
         start.assert_called_once()
         app.tabs.select.assert_not_called()
 
+    def skip_app(self, answer):
+        app = gui.FriendlyApp.__new__(gui.FriendlyApp)
+        app.task_busy = False
+        app.worker = None
+        app.root = Mock()
+        app.verified = Mock()
+        app.setup_card = Mock()
+        app.log = Mock()
+        app.start = Mock()
+        return app
+
+    def test_skip_checks_marks_setup_done_and_starts(self):
+        app = self.skip_app(True)
+        with patch.object(gui.messagebox, 'askyesno', return_value=True), patch.object(gui, 'write_config') as write:
+            app.skip_checks_and_start()
+        values = write.call_args.args[0]
+        self.assertTrue(values['api_verified'] and values['list_verified'] and values['setup_dismissed'])
+        app.start.assert_called_once()
+
+    def test_skip_checks_cancel_changes_nothing(self):
+        app = self.skip_app(False)
+        with patch.object(gui.messagebox, 'askyesno', return_value=False), patch.object(gui, 'write_config') as write:
+            app.skip_checks_and_start()
+        write.assert_not_called()
+        app.start.assert_not_called()
+
     def test_dashboard_uses_saved_interval_and_refreshes_after_change(self):
         app = gui.FriendlyApp.__new__(gui.FriendlyApp)
         app.worker = None

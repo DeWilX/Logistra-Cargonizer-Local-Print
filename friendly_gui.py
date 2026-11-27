@@ -162,6 +162,7 @@ class FriendlyApp(App):
         row = ttk.Frame(self.home)
         row.pack(fill='x', pady=(0, 12))
         self.button(row, 'Palaist automātiku', self.start)
+        self.button(row, 'Izlaist pārbaudes un palaist', self.skip_checks_and_start)
         ttk.Button(row, text='Apturēt', command=self.stop_worker).pack(side='left', padx=(0, 10))
         self.interval_status = tk.StringVar(value=f'Pārbaude ik pēc {max(5, int(cfg["poll_seconds"]))} sekundēm')
         ttk.Label(row, textvariable=self.interval_status).pack(side='left')
@@ -714,6 +715,29 @@ class FriendlyApp(App):
             self.log(f'Sagatavots. {count} pašlaik esoši sūtījumi automātiski netiks drukāti.')
             super(FriendlyApp, self).start()
         self.task(action, complete)
+
+    def skip_checks_and_start(self):
+        """Mark account, shipment-list and setup checks as done, then start right away.
+
+        Duplicate protection (baseline) and a usable printer stay required: without them
+        old labels would print again, or every new label would end up as an uncertain job.
+        """
+        if self.task_busy or self.worker and self.worker.is_alive():
+            return
+        if not messagebox.askyesno('Izlaist pārbaudes?',
+                                   'Automātika sāks darbu bez konta, sūtījumu saraksta un testa drukas pārbaudes. '
+                                   'Jau esošie sūtījumi netiks drukāti — tikai jaunie. Turpināt?', parent=self.root):
+            return
+        try:
+            write_config({'api_verified': True, 'list_verified': True, 'setup_dismissed': True,
+                          'setup_confirmation': 'skipped'})
+        except Exception as error:
+            self.log('Neizdevās saglabāt izvēli: ' + str(error))
+            return
+        self.verified.set(True)
+        self.setup_card.pack_forget()
+        self.log('Pārbaudes izlaistas. Palaiž automātiku…')
+        self.start()
 
     def save_theme(self, _=None):
         mode = next(mode for mode, label in self.theme_labels.items() if label == self.theme.get())
