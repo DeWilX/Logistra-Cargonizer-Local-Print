@@ -72,7 +72,7 @@ class ApiCacheTests(unittest.TestCase):
                 client.get('/consignments/999.xml')
         self.assertFalse(any(key[2].endswith('/999.xml') for key in logistra._api_cache))
 
-    def test_successful_empty_history_is_green_without_enabling_auto_print(self):
+    def test_successful_unconfirmed_load_is_amber_without_enabling_auto_print(self):
         app = friendly_gui.FriendlyApp.__new__(friendly_gui.FriendlyApp)
         for name in ('interval_status', 'status', 'summary', 'progress', 'root'):
             setattr(app, name, Mock())
@@ -84,5 +84,5 @@ class ApiCacheTests(unittest.TestCase):
         cfg = {'poll_seconds': 15, 'printer': '', 'sender_id': '', 'list_verified': False}
         with patch.object(friendly_gui, 'read_config', return_value=cfg):
             app.update_dashboard()
-        app.status_dots[2].configure.assert_called_with(foreground='#16a34a')
+        app.status_dots[2].configure.assert_called_with(foreground='#d97706')
         self.assertFalse(cfg['list_verified'])

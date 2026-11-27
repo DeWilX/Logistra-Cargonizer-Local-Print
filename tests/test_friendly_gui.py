@@ -25,6 +25,32 @@ class GuidedSetupTests(unittest.TestCase):
         start.assert_called_once()
         app.tabs.select.assert_not_called()
 
+    def test_status_green_only_when_start_accepts_it(self):
+        self.assertEqual(gui.status_levels({}, False, True), ('partial', 'missing', 'partial'))
+        self.assertEqual(gui.status_levels({}, False, None), ('missing', 'missing', 'missing'))
+        ready = {'api_verified': True, 'list_verified': True}
+        self.assertEqual(gui.status_levels(ready, True, True), ('ok', 'ok', 'ok'))
+        self.assertEqual(gui.status_levels(ready, True, False), ('ok', 'ok', 'partial'))
+
+    def run_buttons_app(self):
+        app = gui.FriendlyApp.__new__(gui.FriendlyApp)
+        app.start_button, app.skip_button, app.stop_button = Mock(), Mock(), Mock()
+        app.interval_label = Mock()
+        app.run_buttons_state = None
+        app.stop = Mock(is_set=Mock(return_value=False))
+        return app
+
+    def test_only_stop_is_shown_while_running(self):
+        app = self.run_buttons_app()
+        app.update_run_buttons(True)
+        app.stop_button.pack.assert_called_once()
+        app.start_button.pack.assert_not_called()
+        app.skip_button.pack.assert_not_called()
+        app.update_run_buttons(False)
+        app.start_button.pack.assert_called_once()
+        app.skip_button.pack.assert_called_once()
+        app.stop_button.pack.assert_called_once()
+
     def skip_app(self, answer):
         app = gui.FriendlyApp.__new__(gui.FriendlyApp)
         app.task_busy = False

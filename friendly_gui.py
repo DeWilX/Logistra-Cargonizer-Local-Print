@@ -45,16 +45,32 @@ def print_setup_matches(cfg):
         return False
 
 
+STATUS_COLORS = {'ok': '#16a34a', 'partial': '#d97706', 'missing': '#ef4444'}
+
+
+def status_levels(cfg, printer_ready, loaded=None):
+    """Green only when “Palaist automātiku” accepts that item; amber when it works but is unconfirmed."""
+    account = 'ok' if cfg.get('api_verified') else 'partial' if loaded is True else 'missing'
+    printer = 'ok' if printer_ready else 'missing'
+    if cfg.get('list_verified'):
+        shipments = 'partial' if loaded is False else 'ok'
+    else:
+        shipments = 'partial' if loaded is True else 'missing'
+    return account, printer, shipments
+
+
 def status_explanations(cfg, names, loaded=None):
     account = ('Konts ir pārbaudīts un pieslēgts.' if cfg.get('api_verified') else
                'Nav norādīts Sender ID. Ievadi Sender ID un API atslēgu iestatījumos.' if not cfg.get('sender_id') else
+               'Savienojums darbojas, bet konts nav apstiprināts. Nospied “Saglabāt un pārbaudīt” vai “Izlaist pārbaudes un palaist”.' if loaded is True else
                'Konts vēl nav pārbaudīts. Iestatījumos nospied “Saglabāt un pārbaudīt”.')
     printer = ('Printeris nav izvēlēts. Izvēlies un saglabā printeri sadaļā “Printeris un PDF”.' if not cfg.get('printer') else
                'Saglabātais printeris nav atrasts. Pievieno printeri datoram un atsvaidzini printeru sarakstu.' if cfg.get('printer') not in names else
                'Izvēlēts PDF eksports. Fiziskā printera testa druka vēl nav apstiprināta.' if engine.is_pdf_export_printer(cfg) else
                'Printeris ir gatavs. Testa druka ir neobligāta.' if print_setup_matches(cfg) else
                'Printeris ir atrasts. Izvēlies PDF drukāšanas programmu sadaļā “Printeris un PDF”.')
-    shipments = ('Sūtījumi veiksmīgi ielādēti. Tukšs saraksts nav kļūda.' if loaded is True else
+    shipments = ('Sūtījumi veiksmīgi ielādēti. Tukšs saraksts nav kļūda.' if loaded is True and cfg.get('list_verified') else
+                 'Sūtījumi ielādēti, bet jaunā sūtījuma pārbaude nav apstiprināta. Nospied “3. Pārbaudīt jaunu sūtījumu” vai “Izlaist pārbaudes un palaist”.' if loaded is True else
                  'Sūtījumu ielāde neizdevās. Kļūdas apraksts redzams Darbību žurnālā. Mēģini ielādēt vēlreiz.' if loaded is False else
                  'Sūtījumu saraksta pārbaude ir apstiprināta.' if cfg.get('list_verified') else
                  'Sūtījumu saraksts vēl nav pārbaudīts. Pārbaudi jaunu atvērtu sūtījumu un apstiprini saraksta pārbaudi. Tukšs saraksts nav kļūda.')
@@ -161,11 +177,15 @@ class FriendlyApp(App):
         self.setup_state = None
         row = ttk.Frame(self.home)
         row.pack(fill='x', pady=(0, 12))
-        self.button(row, 'Palaist automātiku', self.start)
-        self.button(row, 'Izlaist pārbaudes un palaist', self.skip_checks_and_start)
-        ttk.Button(row, text='Apturēt', command=self.stop_worker).pack(side='left', padx=(0, 10))
+        self.start_button = self.button(row, 'Palaist automātiku', self.start)
+        self.skip_button = self.button(row, 'Izlaist pārbaudes un palaist', self.skip_checks_and_start)
+        self.stop_button = ttk.Button(row, text='Apturēt', command=self.stop_worker)
+        self.stop_button.pack(side='left', padx=(0, 10))
+        self.run_buttons_state = None
         self.interval_status = tk.StringVar(value=f'Pārbaude ik pēc {max(5, int(cfg["poll_seconds"]))} sekundēm')
-        ttk.Label(row, textvariable=self.interval_status).pack(side='left')
+        self.interval_label = ttk.Label(row, textvariable=self.interval_status)
+        self.interval_label.pack(side='left')
+        self.update_run_buttons(False)
         ttk.Checkbutton(self.home, text='Automātiski drukāt jaunās etiķetes (izslēgts = tikai saglabāt PDF)', variable=self.printing).pack(anchor='w', pady=(0, 12))
         manual = ttk.LabelFrame(self.home, text='Etiķete vai pādruka', style='Card.TLabelframe')
         manual.pack(fill='x', pady=(0, 12))
@@ -446,9 +466,9 @@ class FriendlyApp(App):
         steps = [('Konts pieslēgts', cfg.get('api_verified')), ('Printeris apstiprināts', printer_ready), ('Sūtījumu ielāde apstiprināta', cfg.get('list_verified'))]
         self.progress.set('   •   '.join(('✓ ' if done else 'Nav pārbaudīts: ') + name for name, done in steps))
         loaded = getattr(self.shipments_browser, 'load_succeeded', None) if hasattr(self, 'shipments_browser') else None
-        dot_states = [steps[0][1], printer_ready, loaded is True or loaded is None and bool(cfg.get('list_verified'))]
-        for dot, done in zip(self.status_dots, dot_states):
-            dot.configure(foreground='#16a34a' if done else '#ef4444')
+        for dot, level in zip(self.status_dots, status_levels(cfg, printer_ready, loaded)):
+            dot.configure(foreground=STATUS_COLORS[level])
+        self.update_run_buttons(running)
         for hint, explanation in zip(getattr(self, 'status_hints', []), status_explanations(cfg, self.printer_ui.names, loaded)):
             if hint.get() != explanation:
                 hint.set(explanation)
@@ -714,7 +734,27 @@ class FriendlyApp(App):
         def complete(count):
             self.log(f'Sagatavots. {count} pašlaik esoši sūtījumi automātiski netiks drukāti.')
             super(FriendlyApp, self).start()
+            self.update_run_buttons(bool(self.worker and self.worker.is_alive()))
         self.task(action, complete)
+
+    def update_run_buttons(self, running):
+        """While automation runs only “Apturēt” is shown, so it cannot be started twice."""
+        if not hasattr(self, 'stop_button'):
+            return
+        stopping = running and self.stop.is_set()
+        state = (running, stopping)
+        if state == self.run_buttons_state:
+            return
+        self.run_buttons_state = state
+        for button in (self.start_button, self.skip_button, self.stop_button):
+            button.pack_forget()
+        for button in ([self.stop_button] if running else [self.start_button, self.skip_button]):
+            button.pack(side='left', padx=(0, 10), before=self.interval_label)
+        self.stop_button.state(['disabled'] if stopping else ['!disabled'])
+
+    def stop_worker(self):
+        super().stop_worker()
+        self.update_run_buttons(bool(self.worker and self.worker.is_alive()))
 
     def skip_checks_and_start(self):
         """Mark account, shipment-list and setup checks as done, then start right away.

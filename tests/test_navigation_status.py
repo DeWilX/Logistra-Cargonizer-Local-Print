@@ -94,7 +94,8 @@ class NavigationStatusTests(unittest.TestCase):
         cfg['printer'] = ''
         self.assertIn('nav izvēlēts', friendly_gui.status_explanations(cfg, [])[1])
         self.assertIn('Tukšs saraksts nav kļūda', friendly_gui.status_explanations(cfg, [])[2])
-        self.assertIn('veiksmīgi ielādēti', friendly_gui.status_explanations(cfg, [], True)[2])
+        self.assertIn('pārbaude nav apstiprināta', friendly_gui.status_explanations(cfg, [], True)[2])
+        self.assertIn('veiksmīgi ielādēti', friendly_gui.status_explanations({**cfg, 'list_verified': True}, [], True)[2])
         self.assertIn('ielāde neizdevās', friendly_gui.status_explanations(cfg, [], False)[2])
 
     def test_tooltip_updates_live_and_translates_status_text(self):
