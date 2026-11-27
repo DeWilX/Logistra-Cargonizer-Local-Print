@@ -111,5 +111,23 @@ class WorkerTests(unittest.TestCase):
         self.assertEqual(run.call_args.args[0], [str(executable), '/t', str(file.resolve()), 'Zebra', 'Zebra Driver', 'USB001'])
 
 
+    def run_print(self, backend, code):
+        file = self.root / 'label.pdf'
+        executable = self.root / 'Print.exe'
+        executable.touch()
+        details = Mock(returncode=0, stdout=b'{"Name":"Zebra","DriverName":"Zebra Driver","PortName":"USB001"}')
+        calls = [details, Mock(returncode=code)] if backend == 'adobe' else [Mock(returncode=code)]
+        with patch.object(logistra, 'os', SimpleNamespace(name='nt', environ={})),              patch.object(logistra.sys, 'platform', 'win32'),              patch.object(logistra, 'pdf_executable', return_value=executable),              patch.object(logistra.subprocess, 'run', side_effect=calls):
+            logistra.print_pdf({'print_backend': backend, 'printer': 'Zebra', 'print_settings': 'noscale'}, file)
+
+    def test_adobe_exit_code_one_is_accepted(self):
+        self.run_print('adobe', 1)
+        with self.assertRaises(RuntimeError):
+            self.run_print('adobe', 2)
+
+    def test_sumatra_exit_code_one_is_failure(self):
+        with self.assertRaises(RuntimeError):
+            self.run_print('sumatra', 1)
+
 if __name__ == '__main__':
     unittest.main()

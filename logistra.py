@@ -327,7 +327,9 @@ def print_pdf(cfg, file):
         arguments = [str(executable), '-print-to', cfg['printer'], '-print-settings', cfg['print_settings'], '-silent', str(file.resolve())]
     result = subprocess.run(arguments, timeout=90,
                             creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
-    if result.returncode:
+    # Adobe Acrobat/Reader `/t` commonly exits with 1 even after the job reached the spooler.
+    accepted = (0, 1) if cfg.get('print_backend', 'sumatra') == 'adobe' else (0,)
+    if result.returncode not in accepted:
         raise RuntimeError(f'PDF print command failed, exit code {result.returncode}. Check the Windows queue before retrying.')
 
 
